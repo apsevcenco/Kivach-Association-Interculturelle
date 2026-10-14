@@ -36,11 +36,13 @@ const navLinks = navigation.map((item) =>
 app.innerHTML =
   '<a class="skip-link" href="#main">Aller au contenu</a>' +
   '<header class="site-header">' +
-    '<a class="wordmark" href="/" aria-label="Kivach Association Interculturelle, accueil">Kivach <span>Association Interculturelle</span></a>' +
-    '<nav class="site-nav" aria-label="Navigation principale">' + navLinks + '</nav>' +
     '<span class="header-edition">Grasse · 2026</span>' +
+    '<nav class="site-nav" aria-label="Navigation principale">' + navLinks + '</nav>' +
+    '<a class="header-logo" href="/" aria-label="Kivach Association Interculturelle, accueil"><img data-logo alt=""></a>' +
   '</header>' +
   pages[currentPage] +
   '<footer class="site-footer"><span>Kivach Association Interculturelle</span><img src="/ornament.svg" alt="" aria-hidden="true"><span>Grasse · France</span></footer>'
 
-document.querySelector<HTMLImageElement>('[data-logo]')?.setAttribute('src', logoDataUrl)
+document.querySelectorAll<HTMLImageElement>('[data-logo]').forEach((image) => {
+  image.src = logoDataUrl
+})
