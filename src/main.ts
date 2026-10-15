@@ -45,7 +45,6 @@ app.innerHTML =
     '<span class="header-edition">Grasse · 2026</span>' +
   '</header>' +
   '<button class="menu-backdrop" type="button" aria-label="Fermer le menu" tabindex="-1"></button>' +
-  '<div class="page-fold" aria-hidden="true"></div>' +
   pages[currentPage] +
   '<footer class="site-footer"><span>Kivach Association Interculturelle</span><img src="/ornament.svg" alt="" aria-hidden="true"><span>Grasse · France</span></footer>'
 
