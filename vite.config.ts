@@ -8,15 +8,16 @@ const origin = 'https://kivach-association-interculturelle.onrender.com'
 const pagePaths = {
   home: '/', association: '/association/', presidente: '/presidente/',
   projets: '/projets/', galerie: '/galerie/', contact: '/contact/',
+  cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/',
 } as const
 const titles = {
-  fr: ['Accueil', 'L’association', 'Mot de la Présidente', 'Projets', 'Galerie', 'Contact'],
-  en: ['Home', 'About the Association', 'A Word from the President', 'Projects', 'Gallery', 'Contact'],
-  ru: ['Главная', 'Об ассоциации', 'Слово президента', 'Проекты', 'Галерея', 'Контакты'],
-  de: ['Startseite', 'Über den Verein', 'Wort der Präsidentin', 'Projekte', 'Galerie', 'Kontakt'],
-  it: ['Home', 'L’associazione', 'La parola della Presidente', 'Progetti', 'Galleria', 'Contatti'],
-  ar: ['الرئيسية', 'عن الجمعية', 'كلمة الرئيسة', 'المشاريع', 'معرض الصور', 'اتصل بنا'],
-  es: ['Inicio', 'Sobre la asociación', 'Palabras de la presidenta', 'Proyectos', 'Galería', 'Contacto'],
+  fr: ['Accueil', 'L’association', 'Mot de la Présidente', 'Projets', 'Galerie', 'Contact', 'Politique des cookies', 'Politique de confidentialité', 'Mentions légales'],
+  en: ['Home', 'About the Association', 'A Word from the President', 'Projects', 'Gallery', 'Contact', 'Cookie Policy', 'Privacy Policy', 'Legal Notice'],
+  ru: ['Главная', 'Об ассоциации', 'Слово президента', 'Проекты', 'Галерея', 'Контакты', 'Политика cookies', 'Политика конфиденциальности', 'Правовая информация'],
+  de: ['Startseite', 'Über den Verein', 'Wort der Präsidentin', 'Projekte', 'Galerie', 'Kontakt', 'Cookie-Richtlinie', 'Datenschutzerklärung', 'Impressum'],
+  it: ['Home', 'L’associazione', 'La parola della Presidente', 'Progetti', 'Galleria', 'Contatti', 'Informativa sui cookie', 'Informativa sulla privacy', 'Note legali'],
+  ar: ['الرئيسية', 'عن الجمعية', 'كلمة الرئيسة', 'المشاريع', 'معرض الصور', 'اتصل بنا', 'سياسة ملفات تعريف الارتباط', 'سياسة الخصوصية', 'إشعار قانوني'],
+  es: ['Inicio', 'Sobre la asociación', 'Palabras de la presidenta', 'Proyectos', 'Galería', 'Contacto', 'Política de cookies', 'Política de privacidad', 'Aviso legal'],
 } as const
 
 function localizedPath(path: string, locale: string): string {
@@ -38,8 +39,8 @@ function seoHead(path: string, locale: string): string {
 async function writeLocalizedPages(): Promise<void> {
   const output = resolve(root, 'dist')
   const pageEntries = Object.entries(pagePaths)
-  for (const [index, [page, path]] of pageEntries.entries()) {
-    const source = resolve(output, page === 'home' ? 'index.html' : `${page}/index.html`)
+  for (const [index, [, path]] of pageEntries.entries()) {
+    const source = resolve(output, path.slice(1), 'index.html')
     const template = await readFile(source, 'utf8')
     for (const [locale, labels] of Object.entries(titles)) {
       const html = template
@@ -67,6 +68,9 @@ export default defineConfig({
         projets: resolve(root, 'projets/index.html'),
         galerie: resolve(root, 'galerie/index.html'),
         contact: resolve(root, 'contact/index.html'),
+        cookies: resolve(root, 'cookies/index.html'),
+        privacy: resolve(root, 'confidentialite/index.html'),
+        legal: resolve(root, 'mentions-legales/index.html'),
         admin: resolve(root, 'admin/index.html'),
       },
     },

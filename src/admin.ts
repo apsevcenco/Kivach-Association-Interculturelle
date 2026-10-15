@@ -102,7 +102,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const section = sections.find((item) => item.key === activeSection)!
     root.querySelector<HTMLElement>('#section-title')!.textContent = section.label
     const preview = root.querySelector<HTMLAnchorElement>('#page-preview')!
-    const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', gallery: '/galerie/', contact: '/contact/' }
+    const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
     preview.href = localHref(paths[activeSection], activeLocale)
     root.querySelector<HTMLElement>('#translation-actions')!.hidden = activeLocale !== 'ru'
     root.querySelector<HTMLElement>('#translation-hint')!.textContent = activeLocale === 'ru'
@@ -125,7 +125,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       label.textContent = field.label
       const input = field.multiline ? document.createElement('textarea') : document.createElement('input')
       input.id = id
-      if (input instanceof HTMLTextAreaElement) input.rows = 4
+      if (input instanceof HTMLTextAreaElement) input.rows = ['cookies', 'privacy', 'legal'].includes(activeSection) ? 7 : 4
       input.value = activeLocale === 'fr' ? (draft.text[field.key] ?? '') : (draft.translations[activeLocale].text[field.key] ?? '')
       input.placeholder = activeLocale === 'fr' ? '' : draft.text[field.key] ?? ''
       input.addEventListener('input', () => {
@@ -440,3 +440,4 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
   const { data: sessionData } = await client.auth.getSession()
   if (sessionData.session) await enterEditor()
 }
+

@@ -1,6 +1,8 @@
 import { pages, type Page } from './templates'
 import { type Locale, type TranslationLocale } from './i18n'
 import { russianSeed } from './russianSeed'
+import { legalDocuments, type LegalPage } from './legalTemplates'
+import { legalUiSeed } from './legalUiSeed'
 
 export type Section = Page | 'global'
 export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean }
@@ -30,6 +32,9 @@ export const sections: { key: Section; label: string }[] = [
   { key: 'projects', label: 'Проекты' },
   { key: 'gallery', label: 'Галерея' },
   { key: 'contact', label: 'Контакты' },
+  { key: 'cookies', label: 'Политика cookies' },
+  { key: 'privacy', label: 'Конфиденциальность' },
+  { key: 'legal', label: 'Mentions légales' },
 ]
 
 export const textFields: TextField[] = [
@@ -42,6 +47,14 @@ export const textFields: TextField[] = [
   { page: 'global', key: 'global.edition', label: 'Надпись в шапке', selector: '.header-edition' },
   { page: 'global', key: 'global.footer.name', label: 'Подвал · название', selector: '.site-footer span:nth-child(1)' },
   { page: 'global', key: 'global.footer.place', label: 'Подвал · место', selector: '.site-footer span:nth-child(3)' },
+  { page: 'global', key: 'global.footer.cookies', label: 'Подвал · cookies', selector: '.footer-links a:nth-child(1)' },
+  { page: 'global', key: 'global.footer.privacy', label: 'Подвал · конфиденциальность', selector: '.footer-links a:nth-child(2)' },
+  { page: 'global', key: 'global.footer.legal', label: 'Подвал · mentions légales', selector: '.footer-links a:nth-child(3)' },
+  { page: 'global', key: 'global.footer.manage', label: 'Подвал · управление cookies', selector: '#cookie-settings' },
+  { page: 'global', key: 'global.cookie.title', label: 'Баннер · заголовок', selector: '.cookie-notice h2' },
+  { page: 'global', key: 'global.cookie.body', label: 'Баннер · текст', selector: '.cookie-notice .cookie-copy', multiline: true },
+  { page: 'global', key: 'global.cookie.link', label: 'Баннер · ссылка на политику', selector: '.cookie-notice a' },
+  { page: 'global', key: 'global.cookie.button', label: 'Баннер · кнопка', selector: '.cookie-notice button' },
   { page: 'home', key: 'home.kicker', label: 'Надпись над логотипом', selector: '.hero-kicker' },
   { page: 'home', key: 'home.statement', label: 'Главный подзаголовок', selector: '.hero-statement', multiline: true },
   { page: 'home', key: 'home.link', label: 'Ссылка на ассоциацию', selector: '.text-link' },
@@ -92,6 +105,15 @@ export const textFields: TextField[] = [
   { page: 'contact', key: 'contact.messageLabel', label: 'Форма · сообщение', selector: 'label[for="message"]' },
   { page: 'contact', key: 'contact.button', label: 'Форма · кнопка', selector: '.contact-form-wrap button[type="submit"]' },
   { page: 'contact', key: 'contact.formNote', label: 'Форма · примечание', selector: '.form-note', multiline: true },
+  ...(Object.entries(legalDocuments) as [LegalPage, (typeof legalDocuments)[LegalPage]][]).flatMap(([page, document]): TextField[] => [
+    { page, key: `${page}.eyebrow`, label: 'Надзаголовок', selector: `[data-field="${page}.eyebrow"]` },
+    { page, key: `${page}.title`, label: 'Заголовок', selector: `[data-field="${page}.title"]` },
+    { page, key: `${page}.lead`, label: 'Подзаголовок', selector: `[data-field="${page}.lead"]`, multiline: true },
+    ...document.sections.flatMap((section): TextField[] => [
+      { page, key: `${page}.${section.id}.heading`, label: `${section.label} · заголовок`, selector: `[data-field="${page}.${section.id}.heading"]` },
+      { page, key: `${page}.${section.id}.body`, label: `${section.label} · текст`, selector: `[data-field="${page}.${section.id}.body"]`, multiline: true },
+    ]),
+  ]),
 ]
 
 const globalDefaults: Record<string, string> = {
@@ -101,6 +123,14 @@ const globalDefaults: Record<string, string> = {
   'global.edition': 'Grasse · 2026',
   'global.footer.name': 'Kivach Association Interculturelle',
   'global.footer.place': 'Grasse · France',
+  'global.footer.cookies': 'Cookies',
+  'global.footer.privacy': 'Confidentialité',
+  'global.footer.legal': 'Mentions légales',
+  'global.footer.manage': 'Gérer les cookies',
+  'global.cookie.title': 'À propos des cookies',
+  'global.cookie.body': 'Ce site utilise uniquement un stockage nécessaire à son fonctionnement. Aucun traceur publicitaire ou de mesure d’audience facultative n’est activé.',
+  'global.cookie.link': 'Lire la politique des cookies',
+  'global.cookie.button': 'J’ai compris',
 }
 
 let cachedDefaults: SiteContent | undefined
@@ -130,6 +160,7 @@ export function defaultContent(): SiteContent {
     imageUrl: '', imageAlt: '',
   }))
   const translations = Object.fromEntries(translationLocales.map((locale) => [locale, emptyCopy()])) as Record<TranslationLocale, LocalizedCopy>
+  for (const locale of translationLocales) translations[locale].text = { ...legalUiSeed[locale] }
   translations.ru = structuredClone(russianSeed)
   cachedDefaults = { text, images: { logo: '', portrait: '' }, projects, gallery, translations }
   return structuredClone(cachedDefaults)
@@ -285,3 +316,4 @@ export function applyContent(root: HTMLElement, page: Page, content: SiteContent
     }
   }
 }
+

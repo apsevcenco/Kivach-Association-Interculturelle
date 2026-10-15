@@ -44,7 +44,10 @@ app.innerHTML =
   '</header>' +
   '<button class="menu-backdrop" type="button" aria-label="' + ui.close + '" tabindex="-1"></button>' +
   pages[currentPage] +
-  '<footer class="site-footer"><span>Kivach Association Interculturelle</span><img src="/ornament.svg" alt="" aria-hidden="true"><span>Grasse · France</span></footer>'
+  '<footer class="site-footer"><span>Kivach Association Interculturelle</span><img src="/ornament.svg" alt="" aria-hidden="true"><span>Grasse · France</span>' +
+    '<nav class="footer-links" aria-label="' + ui.legal + '"><a href="' + localHref('/cookies/', locale) + '">Cookies</a><a href="' + localHref('/confidentialite/', locale) + '">Confidentialité</a><a href="' + localHref('/mentions-legales/', locale) + '">Mentions légales</a><button id="cookie-settings" type="button">Gérer les cookies</button></nav>' +
+  '</footer>' +
+  '<aside class="cookie-notice" id="cookie-notice" aria-labelledby="cookie-notice-title" hidden><img src="/ornament.svg" alt="" aria-hidden="true"><div><h2 id="cookie-notice-title">À propos des cookies</h2><p class="cookie-copy">Ce site utilise uniquement un stockage nécessaire à son fonctionnement. Aucun traceur publicitaire ou de mesure d’audience facultative n’est activé.</p></div><div class="cookie-actions"><a href="' + localHref('/cookies/', locale) + '">Lire la politique des cookies</a><button type="button">J’ai compris</button></div></aside>'
 
 document.querySelectorAll<HTMLImageElement>('[data-logo]').forEach((image) => {
   image.src = logoDataUrl
@@ -68,6 +71,24 @@ function showContent(content: ReturnType<typeof normalizeContent>): void {
 
 app.style.setProperty('--index-label', `'${ui.index.replaceAll("'", "’")}'`)
 if (locale !== 'fr') showContent(defaultContent())
+const cookieNotice = app.querySelector<HTMLElement>('#cookie-notice')
+const cookieChoiceKey = 'kivach-cookie-notice-v1'
+const sixMonths = 183 * 24 * 60 * 60 * 1000
+let noticeDismissed = false
+try {
+  const dismissedAt = Number(window.localStorage.getItem(cookieChoiceKey))
+  noticeDismissed = dismissedAt > 0 && Date.now() - dismissedAt < sixMonths
+} catch { /* Storage may be unavailable. */ }
+if (cookieNotice && !noticeDismissed) cookieNotice.hidden = false
+cookieNotice?.querySelector('button')?.addEventListener('click', () => {
+  try { window.localStorage.setItem(cookieChoiceKey, String(Date.now())) } catch { /* Storage may be unavailable. */ }
+  cookieNotice.hidden = true
+})
+app.querySelector<HTMLButtonElement>('#cookie-settings')?.addEventListener('click', () => {
+  if (!cookieNotice) return
+  cookieNotice.hidden = false
+  cookieNotice.querySelector<HTMLButtonElement>('button')?.focus()
+})
 app.querySelector<HTMLSelectElement>('#site-language')?.addEventListener('change', (event) => {
   const selected = (event.currentTarget as HTMLSelectElement).value as typeof locale
   window.location.assign(localHref(window.location.pathname + window.location.search + window.location.hash, selected))
