@@ -52,6 +52,7 @@ img{max-width:100%}
 .portrait-placeholder{margin:0}
 .portrait-frame{aspect-ratio:4/5;border:1px solid #786b59;outline:1px solid #786b59;outline-offset:-13px;background:linear-gradient(145deg,#d0be9e,#e7d8bf 48%,#cbb895);display:grid;place-items:center}
 .portrait-frame span{text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-style:italic;line-height:1.1;color:#6c5c47}
+.portrait-frame img{display:block;width:100%;height:100%;object-fit:cover;padding:13px}
 .portrait-placeholder>p{text-transform:uppercase;letter-spacing:.2em;font-size:12px;margin-top:20px}
 .letter{font-size:22px;line-height:1.5;padding-top:5px}
 .letter-salutation{font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-style:italic}
@@ -61,6 +62,7 @@ img{max-width:100%}
 .project-card{display:grid;grid-template-columns:100px 1fr 40px;gap:34px;padding:32px 0;border-bottom:1px solid #9d8d73}
 .project-number{font-family:'Cormorant Garamond',Georgia,serif;font-size:46px}
 .project-card .eyebrow{margin:7px 0}
+.project-image{display:block;width:100%;max-width:560px;aspect-ratio:1.8;object-fit:cover;margin:0 0 22px;border:1px solid #9d8d73}
 .project-card h2{font-size:52px;margin:10px 0}
 .project-card p:last-child{max-width:650px;margin:0;font-size:21px}
 .project-arrow{font-size:31px;align-self:center}
@@ -72,6 +74,7 @@ img{max-width:100%}
 .tile-three .gallery-art{background:linear-gradient(32deg,#9e876a,#e3d5bc 70%,#c7af8c)}
 .tile-four .gallery-art{background:radial-gradient(circle at 20% 70%,#e8d4b2,#a59276 68%,#cab695)}
 .gallery-tile figcaption{border-bottom:1px solid #9d8d73;padding:13px 1px;display:flex;justify-content:space-between;font-family:'Cormorant Garamond',Georgia,serif;font-size:25px}
+.gallery-art img{display:block;width:100%;height:100%;object-fit:cover;padding:13px}
 .gallery-tile figcaption span{font-size:15px}
 .contact-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:12%;border-top:1px solid #9d8d73;padding-top:45px}
 .contact-details address{font-family:'Cormorant Garamond',Georgia,serif;font-style:normal;font-size:38px;line-height:1.1;margin:32px 0}

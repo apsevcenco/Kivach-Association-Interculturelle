@@ -14,6 +14,7 @@ export default defineConfig({
         projets: resolve(root, 'projets/index.html'),
         galerie: resolve(root, 'galerie/index.html'),
         contact: resolve(root, 'contact/index.html'),
+        admin: resolve(root, 'admin/index.html'),
       },
     },
   },
