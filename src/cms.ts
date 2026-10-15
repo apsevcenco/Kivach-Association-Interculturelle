@@ -122,6 +122,7 @@ export const textFields: TextField[] = [
   { page: 'bunin', key: 'bunin.contactBody', label: 'Участие · текст', selector: '[data-field="bunin.contactBody"]', multiline: true },
   { page: 'bunin', key: 'bunin.contactLink', label: 'Участие · ссылка', selector: '[data-field="bunin.contactLink"]' },
   { page: 'bunin', key: 'bunin.sourcesTitle', label: 'Источники · заголовок', selector: '[data-field="bunin.sourcesTitle"]' },
+  { page: 'bunin', key: 'bunin.sourcesNote', label: 'Источники · примечание', selector: '[data-field="bunin.sourcesNote"]', multiline: true },
   { page: 'gallery', key: 'gallery.eyebrow', label: 'Надзаголовок', selector: '.page-heading .eyebrow' },
   { page: 'gallery', key: 'gallery.title', label: 'Заголовок', selector: '.page-heading h1' },
   { page: 'gallery', key: 'gallery.lead', label: 'Подзаголовок', selector: '.page-heading .lead', multiline: true },
