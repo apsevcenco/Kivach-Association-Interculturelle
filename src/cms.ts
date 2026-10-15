@@ -1,15 +1,26 @@
 import { pages, type Page } from './templates'
+import { type Locale, type TranslationLocale } from './i18n'
+import { russianSeed } from './russianSeed'
 
 export type Section = Page | 'global'
 export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean }
 export type Project = { id: string; category: string; title: string; description: string; imageUrl: string; imageAlt: string }
 export type GalleryImage = { id: string; caption: string; imageUrl: string; imageAlt: string }
+export type LocalizedCopy = {
+  text: Record<string, string>
+  projects: Record<string, Pick<Project, 'category' | 'title' | 'description' | 'imageAlt'>>
+  gallery: Record<string, Pick<GalleryImage, 'caption' | 'imageAlt'>>
+}
 export type SiteContent = {
   text: Record<string, string>
   images: Record<string, string>
   projects: Project[]
   gallery: GalleryImage[]
+  translations: Record<TranslationLocale, LocalizedCopy>
 }
+
+const translationLocales: TranslationLocale[] = ['en', 'ru', 'de', 'it', 'ar', 'es']
+function emptyCopy(): LocalizedCopy { return { text: {}, projects: {}, gallery: {} } }
 
 export const sections: { key: Section; label: string }[] = [
   { key: 'global', label: 'Общие элементы' },
@@ -118,7 +129,9 @@ export function defaultContent(): SiteContent {
     caption: tile.querySelector('figcaption')?.firstChild?.textContent?.trim() ?? '',
     imageUrl: '', imageAlt: '',
   }))
-  cachedDefaults = { text, images: { logo: '', portrait: '' }, projects, gallery }
+  const translations = Object.fromEntries(translationLocales.map((locale) => [locale, emptyCopy()])) as Record<TranslationLocale, LocalizedCopy>
+  translations.ru = structuredClone(russianSeed)
+  cachedDefaults = { text, images: { logo: '', portrait: '' }, projects, gallery, translations }
   return structuredClone(cachedDefaults)
 }
 
@@ -138,7 +151,45 @@ export function normalizeContent(value: unknown): SiteContent {
   }
   if (Array.isArray(raw.projects)) defaults.projects = raw.projects.filter(isProject)
   if (Array.isArray(raw.gallery)) defaults.gallery = raw.gallery.filter(isGalleryImage)
+  if (raw.translations && typeof raw.translations === 'object') {
+    for (const locale of translationLocales) {
+      const copy = raw.translations[locale]
+      if (!copy || typeof copy !== 'object') continue
+      if (copy.text && typeof copy.text === 'object') {
+        for (const [key, value] of Object.entries(copy.text)) if (typeof value === 'string') defaults.translations[locale].text[key] = value
+      }
+      if (copy.projects && typeof copy.projects === 'object') {
+        for (const [id, item] of Object.entries(copy.projects)) if (isProjectCopy(item)) defaults.translations[locale].projects[id] = item
+      }
+      if (copy.gallery && typeof copy.gallery === 'object') {
+        for (const [id, item] of Object.entries(copy.gallery)) if (isGalleryCopy(item)) defaults.translations[locale].gallery[id] = item
+      }
+    }
+  }
   return defaults
+}
+
+function isProjectCopy(value: unknown): value is LocalizedCopy['projects'][string] {
+  return Boolean(value && typeof value === 'object' && ['category', 'title', 'description', 'imageAlt'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string'))
+}
+
+function isGalleryCopy(value: unknown): value is LocalizedCopy['gallery'][string] {
+  return Boolean(value && typeof value === 'object' && ['caption', 'imageAlt'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string'))
+}
+
+export function localizedContent(content: SiteContent, locale: Locale): SiteContent {
+  if (locale === 'fr') return content
+  const copy = content.translations[locale]
+  return {
+    ...content,
+    text: { ...content.text, ...nonEmpty(copy.text) },
+    projects: content.projects.map((item) => ({ ...item, ...nonEmpty(copy.projects[item.id] ?? {}) })),
+    gallery: content.gallery.map((item) => ({ ...item, ...nonEmpty(copy.gallery[item.id] ?? {}) })),
+  }
+}
+
+function nonEmpty<T extends object>(values: T): T {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => typeof value === 'string' && value.trim())) as T
 }
 
 function isProject(value: unknown): value is Project {

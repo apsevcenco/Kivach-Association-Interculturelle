@@ -36,6 +36,14 @@ a{color:inherit}
 .admin-actions a{font-size:13px;text-transform:uppercase;letter-spacing:.1em;text-decoration:none;border-bottom:1px solid #8f7e65;padding:7px 0}
 .admin-status{min-height:25px;font-size:15px;color:#5b513f;margin:16px 0}
 .admin-status.is-error{color:#9b2b25}
+.admin-language{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:23px 0 14px}
+.admin-language label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.admin-language select{min-width:165px;padding:9px 30px 9px 12px;border:1px solid #9d8d73;border-radius:0;background:#f7f0e4;color:#29251f;font:inherit}
+.admin-language span{flex-basis:100%;font-size:15px;color:#665b4e}
+.translation-actions{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 22px}
+.translation-actions[hidden]{display:none}
+.translation-actions button{border:1px solid #8f7e65;background:#e5d8c3;color:#29251f;padding:10px 14px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.translation-actions button:hover{background:#d7c3a5}
 .admin-panel{max-width:880px;border:1px solid #aa9a80;background:#f4eddf;padding:28px 34px;margin:24px 0}
 .admin-panel h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:500;margin:0 0 25px}
 .admin-field{margin:0 0 22px}

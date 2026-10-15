@@ -2,6 +2,7 @@ import './admin.css'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, type GalleryImage, type Project, type Section } from './cms'
 import { supabase } from './supabase'
+import { languageNames, locales, localHref, targetLanguageNames, type Locale } from './i18n'
 
 const app = document.querySelector<HTMLDivElement>('#admin-app')
 if (!app) throw new Error('Missing #admin-app element')
@@ -15,8 +16,10 @@ if (!supabase) {
 async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
   let draft = defaultContent()
   let activeSection: Section = 'home'
+  let activeLocale: Locale = 'fr'
   let email = ''
   let saving = false
+  let translating = false
 
   function setStatus(message: string, error = false): void {
     const status = root.querySelector<HTMLElement>('#admin-status')
@@ -70,13 +73,19 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
   }
 
   function renderEditor(): void {
-    root.innerHTML = `<header class="admin-header"><div><p class="admin-kicker">Kivach · Édition</p><h1>Редакция сайта</h1></div><div class="admin-account"><span id="admin-email-display"></span><button type="button" id="logout">Выйти</button></div></header><div class="admin-layout"><nav class="admin-sections" aria-label="Разделы сайта"></nav><main class="admin-main"><div class="admin-toolbar"><div><p class="admin-section-number">Содержимое сайта</p><h2 id="section-title"></h2></div><div class="admin-actions"><a id="page-preview" target="_blank" rel="noopener">Открыть страницу ↗</a><button type="button" id="save-content">Сохранить изменения</button></div></div><p id="admin-status" role="status" class="admin-status"></p><div id="section-fields"></div></main></div>`
+    root.innerHTML = `<header class="admin-header"><div><p class="admin-kicker">Kivach · Édition</p><h1>Редакция сайта</h1></div><div class="admin-account"><span id="admin-email-display"></span><button type="button" id="logout">Выйти</button></div></header><div class="admin-layout"><nav class="admin-sections" aria-label="Разделы сайта"></nav><main class="admin-main"><div class="admin-toolbar"><div><p class="admin-section-number">Содержимое сайта</p><h2 id="section-title"></h2></div><div class="admin-actions"><a id="page-preview" target="_blank" rel="noopener">Открыть страницу ↗</a><button type="button" id="save-content">Сохранить изменения</button></div></div><div class="admin-language"><label for="edit-language">Язык редактирования</label><select id="edit-language">${locales.map((locale) => `<option value="${locale}"${locale === activeLocale ? ' selected' : ''}>${languageNames[locale]}</option>`).join('')}</select><span id="translation-hint"></span></div><div id="translation-actions" class="translation-actions" hidden><button type="button" id="translate-section">Перевести этот раздел с русского</button><button type="button" id="translate-all">Перевести весь сайт с русского</button></div><p id="admin-status" role="status" class="admin-status"></p><div id="section-fields"></div></main></div>`
     root.querySelector<HTMLElement>('#admin-email-display')!.textContent = email
     root.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', async () => {
       await client.auth.signOut()
       renderLogin()
     })
     root.querySelector<HTMLButtonElement>('#save-content')?.addEventListener('click', saveContent)
+    root.querySelector<HTMLSelectElement>('#edit-language')?.addEventListener('change', (event) => {
+      activeLocale = (event.currentTarget as HTMLSelectElement).value as Locale
+      renderSection()
+    })
+    root.querySelector<HTMLButtonElement>('#translate-section')?.addEventListener('click', () => { void translateScope(false) })
+    root.querySelector<HTMLButtonElement>('#translate-all')?.addEventListener('click', () => { void translateScope(true) })
     const nav = root.querySelector<HTMLElement>('.admin-sections')!
     for (const section of sections) {
       const button = document.createElement('button')
@@ -94,7 +103,11 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     root.querySelector<HTMLElement>('#section-title')!.textContent = section.label
     const preview = root.querySelector<HTMLAnchorElement>('#page-preview')!
     const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', gallery: '/galerie/', contact: '/contact/' }
-    preview.href = paths[activeSection]
+    preview.href = localHref(paths[activeSection], activeLocale)
+    root.querySelector<HTMLElement>('#translation-actions')!.hidden = activeLocale !== 'ru'
+    root.querySelector<HTMLElement>('#translation-hint')!.textContent = activeLocale === 'ru'
+      ? 'Русский текст служит оригиналом для автоматического перевода. После перевода проверьте языки и сохраните.'
+      : activeLocale === 'fr' ? 'Исходная французская версия сайта.' : 'Перевод можно исправить вручную после генерации.'
     root.querySelectorAll<HTMLButtonElement>('.admin-sections button').forEach((button, index) => {
       button.classList.toggle('is-active', sections[index].key === activeSection)
     })
@@ -113,8 +126,13 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       const input = field.multiline ? document.createElement('textarea') : document.createElement('input')
       input.id = id
       if (input instanceof HTMLTextAreaElement) input.rows = 4
-      input.value = draft.text[field.key] ?? ''
-      input.addEventListener('input', () => { draft.text[field.key] = input.value; setStatus('Есть несохранённые изменения') })
+      input.value = activeLocale === 'fr' ? (draft.text[field.key] ?? '') : (draft.translations[activeLocale].text[field.key] ?? '')
+      input.placeholder = activeLocale === 'fr' ? '' : draft.text[field.key] ?? ''
+      input.addEventListener('input', () => {
+        if (activeLocale === 'fr') draft.text[field.key] = input.value
+        else draft.translations[activeLocale].text[field.key] = input.value
+        setStatus('Есть несохранённые изменения')
+      })
       wrapper.append(label, input)
       textPanel.append(wrapper)
     }
@@ -170,6 +188,30 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     return panel
   }
 
+  function projectText(item: Project, key: 'category' | 'title' | 'description' | 'imageAlt'): string {
+    if (activeLocale === 'fr') return item[key]
+    return draft.translations[activeLocale].projects[item.id]?.[key] ?? ''
+  }
+
+  function setProjectText(item: Project, key: 'category' | 'title' | 'description' | 'imageAlt', value: string): void {
+    if (activeLocale === 'fr') { item[key] = value; return }
+    const translations = draft.translations[activeLocale].projects
+    translations[item.id] ??= { category: '', title: '', description: '', imageAlt: '' }
+    translations[item.id][key] = value
+  }
+
+  function galleryText(item: GalleryImage, key: 'caption' | 'imageAlt'): string {
+    if (activeLocale === 'fr') return item[key]
+    return draft.translations[activeLocale].gallery[item.id]?.[key] ?? ''
+  }
+
+  function setGalleryText(item: GalleryImage, key: 'caption' | 'imageAlt', value: string): void {
+    if (activeLocale === 'fr') { item[key] = value; return }
+    const translations = draft.translations[activeLocale].gallery
+    translations[item.id] ??= { caption: '', imageAlt: '' }
+    translations[item.id][key] = value
+  }
+
   function createCollectionPanel(kind: 'projects' | 'gallery'): HTMLElement {
     const panel = document.createElement('section')
     panel.className = 'admin-panel'
@@ -181,7 +223,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       const top = document.createElement('div')
       top.className = 'admin-card-top'
       const title = document.createElement('h4')
-      title.textContent = `${String(index + 1).padStart(2, '0')} · ${kind === 'projects' ? (item as Project).title || 'Новый проект' : (item as GalleryImage).caption || 'Новое фото'}`
+      title.textContent = `${String(index + 1).padStart(2, '0')} · ${kind === 'projects' ? projectText(item as Project, 'title') || (item as Project).title || 'Новый проект' : galleryText(item as GalleryImage, 'caption') || (item as GalleryImage).caption || 'Новое фото'}`
       top.append(title)
       const actions = document.createElement('div')
       actions.className = 'admin-card-actions'
@@ -212,20 +254,21 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       card.append(top)
       if (kind === 'projects') {
         const project = item as Project
-        card.append(createBoundField('Категория', project.category, (value) => { project.category = value }))
-        card.append(createBoundField('Заголовок', project.title, (value) => { project.title = value }))
-        card.append(createBoundField('Описание', project.description, (value) => { project.description = value }, true))
+        card.append(createBoundField('Категория', projectText(project, 'category'), (value) => { setProjectText(project, 'category', value) }, false, project.category))
+        card.append(createBoundField('Заголовок', projectText(project, 'title'), (value) => { setProjectText(project, 'title', value) }, false, project.title))
+        card.append(createBoundField('Описание', projectText(project, 'description'), (value) => { setProjectText(project, 'description', value) }, true, project.description))
+        card.append(createBoundField('Описание фотографии для доступности', projectText(project, 'imageAlt'), (value) => { setProjectText(project, 'imageAlt', value) }, false, project.imageAlt))
       } else {
         const image = item as GalleryImage
-        card.append(createBoundField('Подпись', image.caption, (value) => { image.caption = value }))
+        card.append(createBoundField('Подпись', galleryText(image, 'caption'), (value) => { setGalleryText(image, 'caption', value) }, false, image.caption))
+        card.append(createBoundField('Описание фотографии для доступности', galleryText(image, 'imageAlt'), (value) => { setGalleryText(image, 'imageAlt', value) }, false, image.imageAlt))
       }
-      card.append(createBoundField('Описание фотографии для доступности', item.imageAlt, (value) => { item.imageAlt = value }))
       const url = safeImageUrl(item.imageUrl)
       if (url) {
         const preview = document.createElement('img')
         preview.className = 'admin-image-preview'
         preview.src = url
-        preview.alt = item.imageAlt || 'Изображение'
+        preview.alt = (kind === 'projects' ? projectText(item as Project, 'imageAlt') : galleryText(item as GalleryImage, 'imageAlt')) || item.imageAlt || 'Изображение'
         card.append(preview)
       }
       const file = document.createElement('input')
@@ -262,7 +305,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     return panel
   }
 
-  function createBoundField(labelText: string, value: string, update: (value: string) => void, multiline = false): HTMLElement {
+  function createBoundField(labelText: string, value: string, update: (value: string) => void, multiline = false, fallback = ''): HTMLElement {
     const wrapper = document.createElement('div')
     wrapper.className = 'admin-field'
     const label = document.createElement('label')
@@ -272,6 +315,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     label.textContent = labelText
     if (input instanceof HTMLTextAreaElement) input.rows = 3
     input.value = value
+    if (activeLocale !== 'fr') input.placeholder = fallback
     input.addEventListener('input', () => { update(input.value); setStatus('Есть несохранённые изменения') })
     wrapper.append(label, input)
     return wrapper
@@ -290,6 +334,94 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     if (error) { setStatus(`Ошибка загрузки: ${error.message}`, true); return '' }
     const { data } = client.storage.from('site-media').getPublicUrl(path)
     return data.publicUrl
+  }
+
+  async function translateScope(all: boolean): Promise<void> {
+    if (translating || activeLocale !== 'ru') return
+    const endpoint = import.meta.env.VITE_TRANSLATION_API_URL?.trim().replace(/\/$/, '')
+    if (!endpoint) {
+      setStatus('Сервис перевода пока не подключён. Добавьте VITE_TRANSLATION_API_URL в Render Static Site.', true)
+      return
+    }
+    const { data: sessionData } = await client.auth.getSession()
+    const token = sessionData.session?.access_token
+    if (!token) { setStatus('Сессия истекла. Войдите снова.', true); return }
+
+    const items: Record<string, string> = {}
+    for (const field of textFields) {
+      if (!all && field.page !== activeSection) continue
+      const value = draft.translations.ru.text[field.key]?.trim()
+      if (value) items[`text|${field.key}`] = value
+    }
+    if (all || activeSection === 'projects') {
+      for (const project of draft.projects) {
+        for (const key of ['category', 'title', 'description', 'imageAlt'] as const) {
+          const value = draft.translations.ru.projects[project.id]?.[key]?.trim()
+          if (value) items[`project|${project.id}|${key}`] = value
+        }
+      }
+    }
+    if (all || activeSection === 'gallery') {
+      for (const image of draft.gallery) {
+        for (const key of ['caption', 'imageAlt'] as const) {
+          const value = draft.translations.ru.gallery[image.id]?.[key]?.trim()
+          if (value) items[`gallery|${image.id}|${key}`] = value
+        }
+      }
+    }
+    const entries = Object.entries(items)
+    if (!entries.length) { setStatus('Сначала заполните русский текст этого раздела.', true); return }
+    translating = true
+    root.querySelectorAll<HTMLButtonElement>('#translation-actions button').forEach((button) => { button.disabled = true })
+    const targets: Array<Exclude<Locale, 'ru'>> = ['fr', 'en', 'de', 'it', 'ar', 'es']
+    let completed = 0
+    try {
+      for (const target of targets) {
+        for (let index = 0; index < entries.length; index += 25) {
+          const chunk = Object.fromEntries(entries.slice(index, index + 25))
+          setStatus(`Переводим на ${languageNames[target]}… ${completed + 1} / ${targets.length * Math.ceil(entries.length / 25)}`)
+          const response = await fetch(`${endpoint}/translate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ target, items: chunk }),
+          })
+          const payload = await response.json() as { translations?: Record<string, string>; error?: string }
+          if (!response.ok || !payload.translations) throw new Error(payload.error || `Ошибка сервера (${response.status})`)
+          for (const [key, value] of Object.entries(payload.translations)) {
+            const [kind, id, field] = key.split('|')
+            if (kind === 'text') {
+              if (target === 'fr') draft.text[id] = value
+              else draft.translations[target].text[id] = value
+            } else if (kind === 'project' && field) {
+              const project = draft.projects.find((item) => item.id === id)
+              if (!project || !['category', 'title', 'description', 'imageAlt'].includes(field)) continue
+              const property = field as 'category' | 'title' | 'description' | 'imageAlt'
+              if (target === 'fr') project[property] = value
+              else {
+                draft.translations[target].projects[id] ??= { category: '', title: '', description: '', imageAlt: '' }
+                draft.translations[target].projects[id][property] = value
+              }
+            } else if (kind === 'gallery' && field) {
+              const image = draft.gallery.find((item) => item.id === id)
+              if (!image || !['caption', 'imageAlt'].includes(field)) continue
+              const property = field as 'caption' | 'imageAlt'
+              if (target === 'fr') image[property] = value
+              else {
+                draft.translations[target].gallery[id] ??= { caption: '', imageAlt: '' }
+                draft.translations[target].gallery[id][property] = value
+              }
+            }
+          }
+          completed++
+        }
+      }
+      setStatus(`Готово: переведено на ${targets.map((target) => targetLanguageNames[target]).join(', ')}. Проверьте текст и нажмите «Сохранить изменения».`)
+    } catch (error) {
+      setStatus(`Перевод остановлен после ${completed} частей: ${error instanceof Error ? error.message : 'неизвестная ошибка'}. Успешные части остались в редакторе; проверьте их перед сохранением.`, true)
+    } finally {
+      translating = false
+      root.querySelectorAll<HTMLButtonElement>('#translation-actions button').forEach((button) => { button.disabled = false })
+    }
   }
 
   async function saveContent(): Promise<void> {
