@@ -69,11 +69,8 @@ function showContent(content: ReturnType<typeof normalizeContent>): void {
 app.style.setProperty('--index-label', `'${ui.index.replaceAll("'", "’")}'`)
 if (locale !== 'fr') showContent(defaultContent())
 app.querySelector<HTMLSelectElement>('#site-language')?.addEventListener('change', (event) => {
-  const selected = (event.currentTarget as HTMLSelectElement).value
-  const url = new URL(window.location.href)
-  if (selected === 'fr') url.searchParams.delete('lang')
-  else url.searchParams.set('lang', selected)
-  window.location.assign(url.href)
+  const selected = (event.currentTarget as HTMLSelectElement).value as typeof locale
+  window.location.assign(localHref(window.location.pathname + window.location.search + window.location.hash, selected))
 })
 
 if (supabase) {
@@ -128,3 +125,4 @@ document.addEventListener('keydown', (event) => {
     menuToggle.focus()
   }
 })
+

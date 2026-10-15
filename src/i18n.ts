@@ -29,19 +29,18 @@ export function isLocale(value: string | null): value is Locale {
 export function preferredLocale(): Locale {
   const requested = new URLSearchParams(window.location.search).get('lang')
   if (isLocale(requested)) {
-    try { window.localStorage.setItem('kivach-language', requested) } catch { /* storage can be unavailable */ }
+    window.location.replace(localHref(window.location.pathname + window.location.search + window.location.hash, requested))
     return requested
   }
-  try {
-    const stored = window.localStorage.getItem('kivach-language')
-    if (isLocale(stored)) return stored
-  } catch { /* storage can be unavailable */ }
-  return 'fr'
+  const prefix = window.location.pathname.split('/')[1]
+  return isLocale(prefix) ? prefix : 'fr'
 }
 
 export function localHref(path: string, locale: Locale): string {
-  if (locale === 'fr') return path
   const url = new URL(path, window.location.origin)
-  url.searchParams.set('lang', locale)
-  return url.pathname + url.search + url.hash
+  url.searchParams.delete('lang')
+  const basePath = url.pathname.replace(/^\/(?:en|ru|de|it|ar|es)(?=\/|$)/, '') || '/'
+  const localizedPath = locale === 'fr' ? basePath : `/${locale}${basePath}`
+  return localizedPath + url.search + url.hash
 }
+
