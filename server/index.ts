@@ -41,6 +41,7 @@ function validatedItems(value: unknown): Record<string, string> | null {
 
 async function translate(target: string, items: Record<string, string>): Promise<Record<string, string>> {
   if (!openaiKey) throw new Error('OpenAI API key is not configured on the server')
+  const keys = Object.keys(items)
   const output = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
@@ -56,10 +57,8 @@ async function translate(target: string, items: Record<string, string>): Promise
             type: 'object', additionalProperties: false, required: ['translations'],
             properties: {
               translations: {
-                type: 'array', items: {
-                  type: 'object', additionalProperties: false, required: ['key', 'value'],
-                  properties: { key: { type: 'string' }, value: { type: 'string' } },
-                },
+                type: 'object', additionalProperties: false, required: keys,
+                properties: Object.fromEntries(keys.map((key) => [key, { type: 'string' }])),
               },
             },
           },
@@ -76,15 +75,14 @@ async function translate(target: string, items: Record<string, string>): Promise
   const text = result.output?.flatMap((item) => item.type === 'message' ? item.content ?? [] : [])
     .filter((item) => item.type === 'output_text').map((item) => item.text ?? '').join('')
   if (!text) throw new Error('OpenAI returned no translation')
-  const parsed = JSON.parse(text) as { translations?: Array<{ key: string; value: string }> }
-  if (!Array.isArray(parsed.translations)) throw new Error('Invalid translation format')
+  const parsed = JSON.parse(text) as { translations?: Record<string, string> }
+  if (!parsed.translations || typeof parsed.translations !== 'object' || Array.isArray(parsed.translations)) throw new Error('Invalid translation format')
   const translated: Record<string, string> = {}
-  for (const item of parsed.translations) {
-    if (typeof item.key !== 'string' || typeof item.value !== 'string' || !item.value.trim()) throw new Error('Incomplete translation')
-    if (!(item.key in items) || item.key in translated) throw new Error('Unexpected translation key')
-    translated[item.key] = item.value.trim()
+  for (const key of keys) {
+    const value = parsed.translations[key]
+    if (typeof value !== 'string' || !value.trim()) throw new Error('Incomplete translation')
+    translated[key] = value.trim()
   }
-  if (Object.keys(translated).length !== Object.keys(items).length) throw new Error('Some translations are missing')
   return translated
 }
 
