@@ -274,7 +274,9 @@ function normalizeProject(value: unknown): Project | null {
   if (!['id', 'category', 'title', 'description', 'imageUrl', 'imageAlt'].every((key) => typeof item[key] === 'string')) return null
   const photos = Array.isArray(item.photos) ? item.photos.filter(isProjectPhoto) : []
   const documents = Array.isArray(item.documents) ? item.documents.filter(isProjectDocument) : []
-  return { id: item.id as string, category: item.category as string, title: item.title as string, description: item.description as string, imageUrl: item.imageUrl as string, imageAlt: item.imageAlt as string, detailUrl: typeof item.detailUrl === 'string' ? item.detailUrl : '', photos, documents }
+  const id = item.id as string
+  const detailUrl = typeof item.detailUrl === 'string' && item.detailUrl ? item.detailUrl : id === 'original-1' ? '/projets/maison-ivan-bounine/' : ''
+  return { id, category: item.category as string, title: item.title as string, description: item.description as string, imageUrl: item.imageUrl as string, imageAlt: item.imageAlt as string, detailUrl, photos, documents }
 }
 
 function isProjectPhoto(value: unknown): value is ProjectPhoto {
