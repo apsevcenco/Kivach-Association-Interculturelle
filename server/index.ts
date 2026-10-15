@@ -31,7 +31,7 @@ function validatedItems(value: unknown): Record<string, string> | null {
   if (!entries.length || entries.length > 25) return null
   let total = 0
   for (const [key, text] of entries) {
-    if (!/^(text\|[a-zA-Z0-9.]+|(?:project|gallery)\|[a-z0-9-]+\|[a-zA-Z]+)$/.test(key)) return null
+    if (!/^(text\|[a-zA-Z0-9.]+|(?:project|gallery|projectPhoto|projectDocument)\|[a-z0-9-]+\|[a-zA-Z]+)$/.test(key)) return null
     if (typeof text !== 'string' || !text.trim() || text.length > 2500) return null
     total += text.length
   }
