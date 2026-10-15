@@ -7,17 +7,17 @@ const root = fileURLToPath(new URL('.', import.meta.url))
 const origin = 'https://kivach-association-interculturelle.onrender.com'
 const pagePaths = {
   home: '/', association: '/association/', presidente: '/presidente/',
-  projets: '/projets/', galerie: '/galerie/', contact: '/contact/',
+  projets: '/projets/', bunin: '/projets/maison-ivan-bounine/', galerie: '/galerie/', contact: '/contact/',
   cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/',
 } as const
 const titles = {
-  fr: ['Accueil', 'L’association', 'Mot de la Présidente', 'Projets', 'Galerie', 'Contact', 'Politique des cookies', 'Politique de confidentialité', 'Mentions légales'],
-  en: ['Home', 'About the Association', 'A Word from the President', 'Projects', 'Gallery', 'Contact', 'Cookie Policy', 'Privacy Policy', 'Legal Notice'],
-  ru: ['Главная', 'Об ассоциации', 'Слово президента', 'Проекты', 'Галерея', 'Контакты', 'Политика cookies', 'Политика конфиденциальности', 'Правовая информация'],
-  de: ['Startseite', 'Über den Verein', 'Wort der Präsidentin', 'Projekte', 'Galerie', 'Kontakt', 'Cookie-Richtlinie', 'Datenschutzerklärung', 'Impressum'],
-  it: ['Home', 'L’associazione', 'La parola della Presidente', 'Progetti', 'Galleria', 'Contatti', 'Informativa sui cookie', 'Informativa sulla privacy', 'Note legali'],
-  ar: ['الرئيسية', 'عن الجمعية', 'كلمة الرئيسة', 'المشاريع', 'معرض الصور', 'اتصل بنا', 'سياسة ملفات تعريف الارتباط', 'سياسة الخصوصية', 'إشعار قانوني'],
-  es: ['Inicio', 'Sobre la asociación', 'Palabras de la presidenta', 'Proyectos', 'Galería', 'Contacto', 'Política de cookies', 'Política de privacidad', 'Aviso legal'],
+  fr: ['Accueil', 'L’association', 'Mot de la Présidente', 'Projets', 'La Maison d’Ivan Bounine', 'Galerie', 'Contact', 'Politique des cookies', 'Politique de confidentialité', 'Mentions légales'],
+  en: ['Home', 'About the Association', 'A Word from the President', 'Projects', 'The Ivan Bunin House', 'Gallery', 'Contact', 'Cookie Policy', 'Privacy Policy', 'Legal Notice'],
+  ru: ['Главная', 'Об ассоциации', 'Слово президента', 'Проекты', 'Дом Ивана Бунина', 'Галерея', 'Контакты', 'Политика cookies', 'Политика конфиденциальности', 'Правовая информация'],
+  de: ['Startseite', 'Über den Verein', 'Wort der Präsidentin', 'Projekte', 'Das Iwan-Bunin-Haus', 'Galerie', 'Kontakt', 'Cookie-Richtlinie', 'Datenschutzerklärung', 'Impressum'],
+  it: ['Home', 'L’associazione', 'La parola della Presidente', 'Progetti', 'La Casa di Ivan Bunin', 'Galleria', 'Contatti', 'Informativa sui cookie', 'Informativa sulla privacy', 'Note legali'],
+  ar: ['الرئيسية', 'عن الجمعية', 'كلمة الرئيسة', 'المشاريع', 'بيت إيفان بونين', 'معرض الصور', 'اتصل بنا', 'سياسة ملفات تعريف الارتباط', 'سياسة الخصوصية', 'إشعار قانوني'],
+  es: ['Inicio', 'Sobre la asociación', 'Palabras de la presidenta', 'Proyectos', 'La Casa de Iván Bunin', 'Galería', 'Contacto', 'Política de cookies', 'Política de privacidad', 'Aviso legal'],
 } as const
 
 function localizedPath(path: string, locale: string): string {
@@ -66,6 +66,7 @@ export default defineConfig({
         association: resolve(root, 'association/index.html'),
         presidente: resolve(root, 'presidente/index.html'),
         projets: resolve(root, 'projets/index.html'),
+        bunin: resolve(root, 'projets/maison-ivan-bounine/index.html'),
         galerie: resolve(root, 'galerie/index.html'),
         contact: resolve(root, 'contact/index.html'),
         cookies: resolve(root, 'cookies/index.html'),
@@ -76,4 +77,3 @@ export default defineConfig({
     },
   },
 })
-

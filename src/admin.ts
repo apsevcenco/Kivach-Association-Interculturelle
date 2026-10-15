@@ -1,6 +1,6 @@
 import './admin.css'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, type GalleryImage, type Project, type Section } from './cms'
+import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, type GalleryImage, type Project, type ProjectDocument, type ProjectPhoto, type Section } from './cms'
 import { supabase } from './supabase'
 import { languageNames, locales, localHref, targetLanguageNames, type Locale } from './i18n'
 
@@ -102,7 +102,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const section = sections.find((item) => item.key === activeSection)!
     root.querySelector<HTMLElement>('#section-title')!.textContent = section.label
     const preview = root.querySelector<HTMLAnchorElement>('#page-preview')!
-    const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
+    const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', bunin: '/projets/maison-ivan-bounine/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
     preview.href = localHref(paths[activeSection], activeLocale)
     root.querySelector<HTMLElement>('#translation-actions')!.hidden = activeLocale !== 'ru'
     root.querySelector<HTMLElement>('#translation-hint')!.textContent = activeLocale === 'ru'
@@ -140,6 +140,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     if (activeSection === 'global') container.append(createImagePanel('Логотип сайта', 'logo', 'Загрузить новый логотип'))
     if (activeSection === 'president') container.append(createImagePanel('Портрет президента', 'portrait', 'Загрузить портрет'))
     if (activeSection === 'projects') container.append(createCollectionPanel('projects'))
+    if (activeSection === 'bunin') container.append(createBuninAssetsPanel())
     if (activeSection === 'gallery') container.append(createCollectionPanel('gallery'))
   }
 
@@ -210,6 +211,134 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const translations = draft.translations[activeLocale].gallery
     translations[item.id] ??= { caption: '', imageAlt: '' }
     translations[item.id][key] = value
+  }
+
+  function projectPhotoText(item: ProjectPhoto, key: 'caption' | 'imageAlt'): string {
+    if (activeLocale === 'fr') return item[key]
+    return draft.translations[activeLocale].projectPhotos[item.id]?.[key] ?? ''
+  }
+
+  function setProjectPhotoText(item: ProjectPhoto, key: 'caption' | 'imageAlt', value: string): void {
+    if (activeLocale === 'fr') { item[key] = value; return }
+    const translations = draft.translations[activeLocale].projectPhotos
+    translations[item.id] ??= { caption: '', imageAlt: '' }
+    translations[item.id][key] = value
+  }
+
+  function projectDocumentTitle(item: ProjectDocument): string {
+    if (activeLocale === 'fr') return item.title
+    return draft.translations[activeLocale].projectDocuments[item.id]?.title ?? ''
+  }
+
+  function setProjectDocumentTitle(item: ProjectDocument, value: string): void {
+    if (activeLocale === 'fr') { item.title = value; return }
+    draft.translations[activeLocale].projectDocuments[item.id] ??= { title: '' }
+    draft.translations[activeLocale].projectDocuments[item.id].title = value
+  }
+
+  function buninProject(): Project {
+    return draft.projects.find((item) => item.detailUrl.includes('maison-ivan-bounine')) ?? draft.projects[0]
+  }
+
+  function createBuninAssetsPanel(): HTMLElement {
+    const project = buninProject()
+    const panel = document.createElement('section')
+    panel.className = 'admin-panel'
+    panel.append(createHeading('Фотографии проекта'))
+    const help = document.createElement('p')
+    help.className = 'admin-help'
+    help.textContent = 'Главная фотография карточки загружается в разделе «Проекты». Здесь можно собрать отдельную фотогалерею страницы без повторов.'
+    panel.append(help)
+    project.photos.forEach((photo, index) => {
+      const card = document.createElement('article')
+      card.className = 'admin-card'
+      const top = document.createElement('div')
+      top.className = 'admin-card-top'
+      const title = document.createElement('h4')
+      title.textContent = `Фото ${String(index + 1).padStart(2, '0')}`
+      const remove = document.createElement('button')
+      remove.type = 'button'
+      remove.textContent = 'Удалить'
+      remove.addEventListener('click', () => { project.photos.splice(index, 1); renderSection(); setStatus('Есть несохранённые изменения') })
+      top.append(title, remove)
+      card.append(top)
+      card.append(createBoundField('Подпись', projectPhotoText(photo, 'caption'), (value) => { setProjectPhotoText(photo, 'caption', value) }, false, photo.caption))
+      card.append(createBoundField('Описание для доступности', projectPhotoText(photo, 'imageAlt'), (value) => { setProjectPhotoText(photo, 'imageAlt', value) }, false, photo.imageAlt))
+      const url = safeImageUrl(photo.imageUrl)
+      if (url) {
+        const preview = document.createElement('img')
+        preview.className = 'admin-image-preview'
+        preview.src = url
+        preview.alt = projectPhotoText(photo, 'imageAlt') || photo.imageAlt || 'Фотография проекта'
+        card.append(preview)
+      }
+      const file = document.createElement('input')
+      file.type = 'file'
+      file.accept = 'image/jpeg,image/png,image/webp,image/avif'
+      file.setAttribute('aria-label', `Загрузить фото ${index + 1}`)
+      file.addEventListener('change', async () => {
+        const selected = file.files?.[0]
+        if (!selected) return
+        const imageUrl = await uploadImage(selected)
+        if (imageUrl) { photo.imageUrl = imageUrl; renderSection(); setStatus('Фотография загружена. Сохраните страницу.') }
+      })
+      card.append(file)
+      panel.append(card)
+    })
+    const addPhoto = document.createElement('button')
+    addPhoto.type = 'button'
+    addPhoto.className = 'admin-add'
+    addPhoto.textContent = '+ Добавить фотографию проекта'
+    addPhoto.addEventListener('click', () => { project.photos.push({ id: crypto.randomUUID(), caption: '', imageUrl: '', imageAlt: '' }); renderSection(); setStatus('Есть несохранённые изменения') })
+    panel.append(addPhoto)
+
+    panel.append(createHeading('PDF-документы проекта'))
+    const documentHelp = document.createElement('p')
+    documentHelp.className = 'admin-help'
+    documentHelp.textContent = 'После сохранения документы появятся в открытом разделе проекта. Допустимы PDF до 25 МБ.'
+    panel.append(documentHelp)
+    project.documents.forEach((documentItem, index) => {
+      const card = document.createElement('article')
+      card.className = 'admin-card'
+      const top = document.createElement('div')
+      top.className = 'admin-card-top'
+      const title = document.createElement('h4')
+      title.textContent = `Документ ${String(index + 1).padStart(2, '0')}`
+      const remove = document.createElement('button')
+      remove.type = 'button'
+      remove.textContent = 'Удалить'
+      remove.addEventListener('click', () => { project.documents.splice(index, 1); renderSection(); setStatus('Есть несохранённые изменения') })
+      top.append(title, remove)
+      card.append(top)
+      card.append(createBoundField('Название документа', projectDocumentTitle(documentItem), (value) => { setProjectDocumentTitle(documentItem, value) }, false, documentItem.title))
+      if (documentItem.url) {
+        const link = document.createElement('a')
+        link.href = documentItem.url
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        link.textContent = 'Открыть загруженный PDF ↗'
+        card.append(link)
+      }
+      const file = document.createElement('input')
+      file.type = 'file'
+      file.accept = 'application/pdf,.pdf'
+      file.setAttribute('aria-label', `Загрузить PDF ${index + 1}`)
+      file.addEventListener('change', async () => {
+        const selected = file.files?.[0]
+        if (!selected) return
+        const url = await uploadDocument(selected)
+        if (url) { documentItem.url = url; renderSection(); setStatus('PDF загружен. Сохраните страницу.') }
+      })
+      card.append(file)
+      panel.append(card)
+    })
+    const addDocument = document.createElement('button')
+    addDocument.type = 'button'
+    addDocument.className = 'admin-add'
+    addDocument.textContent = '+ Добавить PDF-документ'
+    addDocument.addEventListener('click', () => { project.documents.push({ id: crypto.randomUUID(), title: '', url: '' }); renderSection(); setStatus('Есть несохранённые изменения') })
+    panel.append(addDocument)
+    return panel
   }
 
   function createCollectionPanel(kind: 'projects' | 'gallery'): HTMLElement {
@@ -297,7 +426,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     add.className = 'admin-add'
     add.textContent = kind === 'projects' ? '+ Добавить проект' : '+ Добавить фото'
     add.addEventListener('click', () => {
-      if (kind === 'projects') draft.projects.push({ id: crypto.randomUUID(), category: '', title: '', description: '', imageUrl: '', imageAlt: '' })
+      if (kind === 'projects') draft.projects.push({ id: crypto.randomUUID(), category: '', title: '', description: '', imageUrl: '', imageAlt: '', detailUrl: '', photos: [], documents: [] })
       else draft.gallery.push({ id: crypto.randomUUID(), caption: '', imageUrl: '', imageAlt: '' })
       renderSection(); setStatus('Есть несохранённые изменения')
     })
@@ -336,6 +465,19 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     return data.publicUrl
   }
 
+  async function uploadDocument(file: File): Promise<string> {
+    if (file.type !== 'application/pdf' || file.size > 25 * 1024 * 1024) {
+      setStatus('Допустим только PDF до 25 МБ.', true)
+      return ''
+    }
+    setStatus('Загружаем PDF…')
+    const path = `uploads/${crypto.randomUUID()}.pdf`
+    const { error } = await client.storage.from('site-media').upload(path, file, { contentType: 'application/pdf', upsert: false })
+    if (error) { setStatus(`Ошибка загрузки PDF: ${error.message}`, true); return '' }
+    const { data } = client.storage.from('site-media').getPublicUrl(path)
+    return data.publicUrl
+  }
+
   async function translateScope(all: boolean): Promise<void> {
     if (translating || activeLocale !== 'ru') return
     const endpoint = import.meta.env.VITE_TRANSLATION_API_URL?.trim().replace(/\/$/, '')
@@ -359,6 +501,19 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
           const value = draft.translations.ru.projects[project.id]?.[key]?.trim()
           if (value) items[`project|${project.id}|${key}`] = value
         }
+      }
+    }
+    if (all || activeSection === 'bunin') {
+      const project = buninProject()
+      for (const photo of project.photos) {
+        for (const key of ['caption', 'imageAlt'] as const) {
+          const value = draft.translations.ru.projectPhotos[photo.id]?.[key]?.trim()
+          if (value) items[`projectPhoto|${photo.id}|${key}`] = value
+        }
+      }
+      for (const documentItem of project.documents) {
+        const value = draft.translations.ru.projectDocuments[documentItem.id]?.title?.trim()
+        if (value) items[`projectDocument|${documentItem.id}|title`] = value
       }
     }
     if (all || activeSection === 'gallery') {
@@ -409,6 +564,23 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
               else {
                 draft.translations[target].gallery[id] ??= { caption: '', imageAlt: '' }
                 draft.translations[target].gallery[id][property] = value
+              }
+            } else if (kind === 'projectPhoto' && field) {
+              const photo = draft.projects.flatMap((item) => item.photos).find((item) => item.id === id)
+              if (!photo || !['caption', 'imageAlt'].includes(field)) continue
+              const property = field as 'caption' | 'imageAlt'
+              if (target === 'fr') photo[property] = value
+              else {
+                draft.translations[target].projectPhotos[id] ??= { caption: '', imageAlt: '' }
+                draft.translations[target].projectPhotos[id][property] = value
+              }
+            } else if (kind === 'projectDocument' && field === 'title') {
+              const documentItem = draft.projects.flatMap((item) => item.documents).find((item) => item.id === id)
+              if (!documentItem) continue
+              if (target === 'fr') documentItem.title = value
+              else {
+                draft.translations[target].projectDocuments[id] ??= { title: '' }
+                draft.translations[target].projectDocuments[id].title = value
               }
             }
           }

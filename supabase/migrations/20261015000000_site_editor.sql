@@ -55,8 +55,8 @@ create policy "Editors can update site content"
 -- Public bucket serves images; only editors may upload them.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
-  'site-media', 'site-media', true, 10485760,
-  array['image/jpeg', 'image/png', 'image/webp', 'image/avif']
+  'site-media', 'site-media', true, 26214400,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'application/pdf']
 )
 on conflict (id) do nothing;
 

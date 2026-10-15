@@ -1,16 +1,20 @@
 import { pages, type Page } from './templates'
-import { type Locale, type TranslationLocale } from './i18n'
+import { localHref, type Locale, type TranslationLocale } from './i18n'
 import { russianSeed } from './russianSeed'
 import { legalDocuments, type LegalPage } from './legalTemplates'
 import { legalUiSeed } from './legalUiSeed'
 
 export type Section = Page | 'global'
 export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean }
-export type Project = { id: string; category: string; title: string; description: string; imageUrl: string; imageAlt: string }
+export type ProjectPhoto = { id: string; caption: string; imageUrl: string; imageAlt: string }
+export type ProjectDocument = { id: string; title: string; url: string }
+export type Project = { id: string; category: string; title: string; description: string; imageUrl: string; imageAlt: string; detailUrl: string; photos: ProjectPhoto[]; documents: ProjectDocument[] }
 export type GalleryImage = { id: string; caption: string; imageUrl: string; imageAlt: string }
 export type LocalizedCopy = {
   text: Record<string, string>
   projects: Record<string, Pick<Project, 'category' | 'title' | 'description' | 'imageAlt'>>
+  projectPhotos: Record<string, Pick<ProjectPhoto, 'caption' | 'imageAlt'>>
+  projectDocuments: Record<string, Pick<ProjectDocument, 'title'>>
   gallery: Record<string, Pick<GalleryImage, 'caption' | 'imageAlt'>>
 }
 export type SiteContent = {
@@ -22,7 +26,7 @@ export type SiteContent = {
 }
 
 const translationLocales: TranslationLocale[] = ['en', 'ru', 'de', 'it', 'ar', 'es']
-function emptyCopy(): LocalizedCopy { return { text: {}, projects: {}, gallery: {} } }
+function emptyCopy(): LocalizedCopy { return { text: {}, projects: {}, projectPhotos: {}, projectDocuments: {}, gallery: {} } }
 
 export const sections: { key: Section; label: string }[] = [
   { key: 'global', label: 'Общие элементы' },
@@ -30,6 +34,7 @@ export const sections: { key: Section; label: string }[] = [
   { key: 'about', label: 'Об ассоциации' },
   { key: 'president', label: 'Слово президента' },
   { key: 'projects', label: 'Проекты' },
+  { key: 'bunin', label: 'Дом Ивана Бунина' },
   { key: 'gallery', label: 'Галерея' },
   { key: 'contact', label: 'Контакты' },
   { key: 'cookies', label: 'Политика cookies' },
@@ -88,6 +93,35 @@ export const textFields: TextField[] = [
   { page: 'projects', key: 'projects.title', label: 'Заголовок', selector: '.page-heading h1' },
   { page: 'projects', key: 'projects.lead', label: 'Подзаголовок', selector: '.page-heading .lead', multiline: true },
   { page: 'projects', key: 'projects.note', label: 'Примечание', selector: '.source-note', multiline: true },
+  { page: 'bunin', key: 'bunin.eyebrow', label: 'Надзаголовок', selector: '[data-field="bunin.eyebrow"]' },
+  { page: 'bunin', key: 'bunin.title', label: 'Заголовок', selector: '[data-field="bunin.title"]' },
+  { page: 'bunin', key: 'bunin.lead', label: 'Подзаголовок', selector: '[data-field="bunin.lead"]', multiline: true },
+  { page: 'bunin', key: 'bunin.introMark', label: 'Вступление · рубрика', selector: '[data-field="bunin.introMark"]' },
+  { page: 'bunin', key: 'bunin.opening', label: 'Вступление · цитата', selector: '[data-field="bunin.opening"]', multiline: true },
+  { page: 'bunin', key: 'bunin.intro', label: 'Вступление · текст', selector: '[data-field="bunin.intro"]', multiline: true },
+  { page: 'bunin', key: 'bunin.authorKicker', label: '01 · рубрика', selector: '[data-field="bunin.authorKicker"]' },
+  { page: 'bunin', key: 'bunin.authorTitle', label: '01 · заголовок', selector: '[data-field="bunin.authorTitle"]' },
+  { page: 'bunin', key: 'bunin.authorBody', label: '01 · текст', selector: '[data-field="bunin.authorBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.houseKicker', label: '02 · рубрика', selector: '[data-field="bunin.houseKicker"]' },
+  { page: 'bunin', key: 'bunin.houseTitle', label: '02 · заголовок', selector: '[data-field="bunin.houseTitle"]' },
+  { page: 'bunin', key: 'bunin.houseBody', label: '02 · текст', selector: '[data-field="bunin.houseBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.visionKicker', label: '03 · рубрика', selector: '[data-field="bunin.visionKicker"]' },
+  { page: 'bunin', key: 'bunin.visionTitle', label: '03 · заголовок', selector: '[data-field="bunin.visionTitle"]' },
+  { page: 'bunin', key: 'bunin.visionBody', label: '03 · текст', selector: '[data-field="bunin.visionBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.pathKicker', label: '04 · рубрика', selector: '[data-field="bunin.pathKicker"]' },
+  { page: 'bunin', key: 'bunin.pathTitle', label: '04 · заголовок', selector: '[data-field="bunin.pathTitle"]' },
+  { page: 'bunin', key: 'bunin.pathBody', label: '04 · текст', selector: '[data-field="bunin.pathBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.partnershipKicker', label: 'Партнёрство · рубрика', selector: '[data-field="bunin.partnershipKicker"]' },
+  { page: 'bunin', key: 'bunin.partnershipTitle', label: 'Партнёрство · заголовок', selector: '[data-field="bunin.partnershipTitle"]' },
+  { page: 'bunin', key: 'bunin.partnershipBody', label: 'Партнёрство · текст', selector: '[data-field="bunin.partnershipBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.documentsKicker', label: 'Документы · рубрика', selector: '[data-field="bunin.documentsKicker"]' },
+  { page: 'bunin', key: 'bunin.documentsTitle', label: 'Документы · заголовок', selector: '[data-field="bunin.documentsTitle"]' },
+  { page: 'bunin', key: 'bunin.documentsLead', label: 'Документы · пояснение', selector: '[data-field="bunin.documentsLead"]', multiline: true },
+  { page: 'bunin', key: 'bunin.contactKicker', label: 'Участие · рубрика', selector: '[data-field="bunin.contactKicker"]' },
+  { page: 'bunin', key: 'bunin.contactTitle', label: 'Участие · заголовок', selector: '[data-field="bunin.contactTitle"]' },
+  { page: 'bunin', key: 'bunin.contactBody', label: 'Участие · текст', selector: '[data-field="bunin.contactBody"]', multiline: true },
+  { page: 'bunin', key: 'bunin.contactLink', label: 'Участие · ссылка', selector: '[data-field="bunin.contactLink"]' },
+  { page: 'bunin', key: 'bunin.sourcesTitle', label: 'Источники · заголовок', selector: '[data-field="bunin.sourcesTitle"]' },
   { page: 'gallery', key: 'gallery.eyebrow', label: 'Надзаголовок', selector: '.page-heading .eyebrow' },
   { page: 'gallery', key: 'gallery.title', label: 'Заголовок', selector: '.page-heading h1' },
   { page: 'gallery', key: 'gallery.lead', label: 'Подзаголовок', selector: '.page-heading .lead', multiline: true },
@@ -151,7 +185,7 @@ export function defaultContent(): SiteContent {
     category: card.querySelector('.eyebrow')?.textContent?.trim() ?? '',
     title: card.querySelector('h2')?.textContent?.trim() ?? '',
     description: card.querySelector('p:last-child')?.textContent?.trim() ?? '',
-    imageUrl: '', imageAlt: '',
+    imageUrl: '', imageAlt: '', detailUrl: index === 0 ? '/projets/maison-ivan-bounine/' : '', photos: [], documents: [],
   }))
   const galleryDoc = new DOMParser().parseFromString(pages.gallery, 'text/html')
   const gallery: GalleryImage[] = Array.from(galleryDoc.querySelectorAll('.gallery-tile')).map((tile, index) => ({
@@ -180,7 +214,7 @@ export function normalizeContent(value: unknown): SiteContent {
       if (typeof raw.images[key] === 'string') defaults.images[key] = raw.images[key]
     }
   }
-  if (Array.isArray(raw.projects)) defaults.projects = raw.projects.filter(isProject)
+  if (Array.isArray(raw.projects)) defaults.projects = raw.projects.map(normalizeProject).filter((item): item is Project => Boolean(item))
   if (Array.isArray(raw.gallery)) defaults.gallery = raw.gallery.filter(isGalleryImage)
   if (raw.translations && typeof raw.translations === 'object') {
     for (const locale of translationLocales) {
@@ -191,6 +225,12 @@ export function normalizeContent(value: unknown): SiteContent {
       }
       if (copy.projects && typeof copy.projects === 'object') {
         for (const [id, item] of Object.entries(copy.projects)) if (isProjectCopy(item)) defaults.translations[locale].projects[id] = item
+      }
+      if (copy.projectPhotos && typeof copy.projectPhotos === 'object') {
+        for (const [id, item] of Object.entries(copy.projectPhotos)) if (isGalleryCopy(item)) defaults.translations[locale].projectPhotos[id] = item
+      }
+      if (copy.projectDocuments && typeof copy.projectDocuments === 'object') {
+        for (const [id, item] of Object.entries(copy.projectDocuments)) if (item && typeof item === 'object' && typeof (item as { title?: unknown }).title === 'string') defaults.translations[locale].projectDocuments[id] = item as { title: string }
       }
       if (copy.gallery && typeof copy.gallery === 'object') {
         for (const [id, item] of Object.entries(copy.gallery)) if (isGalleryCopy(item)) defaults.translations[locale].gallery[id] = item
@@ -214,7 +254,12 @@ export function localizedContent(content: SiteContent, locale: Locale): SiteCont
   return {
     ...content,
     text: { ...content.text, ...nonEmpty(copy.text) },
-    projects: content.projects.map((item) => ({ ...item, ...nonEmpty(copy.projects[item.id] ?? {}) })),
+    projects: content.projects.map((item) => ({
+      ...item,
+      ...nonEmpty(copy.projects[item.id] ?? {}),
+      photos: item.photos.map((photo) => ({ ...photo, ...nonEmpty(copy.projectPhotos[photo.id] ?? {}) })),
+      documents: item.documents.map((document) => ({ ...document, ...nonEmpty(copy.projectDocuments[document.id] ?? {}) })),
+    })),
     gallery: content.gallery.map((item) => ({ ...item, ...nonEmpty(copy.gallery[item.id] ?? {}) })),
   }
 }
@@ -223,10 +268,21 @@ function nonEmpty<T extends object>(values: T): T {
   return Object.fromEntries(Object.entries(values).filter(([, value]) => typeof value === 'string' && value.trim())) as T
 }
 
-function isProject(value: unknown): value is Project {
-  if (!value || typeof value !== 'object') return false
+function normalizeProject(value: unknown): Project | null {
+  if (!value || typeof value !== 'object') return null
   const item = value as Record<string, unknown>
-  return ['id', 'category', 'title', 'description', 'imageUrl', 'imageAlt'].every((key) => typeof item[key] === 'string')
+  if (!['id', 'category', 'title', 'description', 'imageUrl', 'imageAlt'].every((key) => typeof item[key] === 'string')) return null
+  const photos = Array.isArray(item.photos) ? item.photos.filter(isProjectPhoto) : []
+  const documents = Array.isArray(item.documents) ? item.documents.filter(isProjectDocument) : []
+  return { id: item.id as string, category: item.category as string, title: item.title as string, description: item.description as string, imageUrl: item.imageUrl as string, imageAlt: item.imageAlt as string, detailUrl: typeof item.detailUrl === 'string' ? item.detailUrl : '', photos, documents }
+}
+
+function isProjectPhoto(value: unknown): value is ProjectPhoto {
+  return Boolean(value && typeof value === 'object' && ['id', 'caption', 'imageUrl', 'imageAlt'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string'))
+}
+
+function isProjectDocument(value: unknown): value is ProjectDocument {
+  return Boolean(value && typeof value === 'object' && ['id', 'title', 'url'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string'))
 }
 
 function isGalleryImage(value: unknown): value is GalleryImage {
@@ -287,10 +343,73 @@ export function applyContent(root: HTMLElement, page: Page, content: SiteContent
           image.loading = 'lazy'
           body.append(image)
         }
-        body.append(element('p', 'eyebrow', project.category), element('h2', '', project.title), element('p', 'project-description', project.description))
-        card.append(body, element('span', 'project-arrow', '↗'))
+        body.append(element('p', 'eyebrow', project.category))
+        const title = element('h2', '', project.title)
+        const detailUrl = project.detailUrl.startsWith('/') ? localHref(project.detailUrl, document.documentElement.lang as Locale) : ''
+        if (detailUrl) {
+          const link = document.createElement('a')
+          link.className = 'project-title-link'
+          link.href = detailUrl
+          link.append(title)
+          body.append(link)
+        } else body.append(title)
+        body.append(element('p', 'project-description', project.description))
+        if (detailUrl) {
+          const arrow = document.createElement('a')
+          arrow.className = 'project-arrow'
+          arrow.href = detailUrl
+          arrow.textContent = '↗'
+          arrow.setAttribute('aria-label', project.title)
+          card.append(body, arrow)
+        } else card.append(body, element('span', 'project-arrow', '↗'))
         list.append(card)
       })
+    }
+  }
+  if (page === 'bunin') {
+    const project = content.projects.find((item) => item.detailUrl.includes('maison-ivan-bounine')) ?? content.projects[0]
+    if (project) {
+      const hero = root.querySelector<HTMLElement>('#bunin-hero-photo')
+      const heroUrl = safeImageUrl(project.imageUrl)
+      if (hero && heroUrl) {
+        const image = document.createElement('img')
+        image.src = heroUrl
+        image.alt = project.imageAlt || project.title
+        hero.replaceChildren(image)
+      }
+      const gallery = root.querySelector<HTMLElement>('#bunin-photo-grid')
+      if (gallery) {
+        gallery.replaceChildren()
+        project.photos.forEach((photo, index) => {
+          const url = safeImageUrl(photo.imageUrl)
+          if (!url) return
+          const figure = document.createElement('figure')
+          figure.className = `bunin-photo bunin-photo-${(index % 7) + 1}`
+          const image = document.createElement('img')
+          image.src = url
+          image.alt = photo.imageAlt || photo.caption || project.title
+          image.loading = 'lazy'
+          figure.append(image)
+          if (photo.caption) figure.append(element('figcaption', '', photo.caption))
+          gallery.append(figure)
+        })
+        gallery.hidden = gallery.children.length === 0
+      }
+      const documents = root.querySelector<HTMLElement>('#bunin-document-list')
+      if (documents) {
+        documents.replaceChildren()
+        project.documents.forEach((documentItem, index) => {
+          const url = safeImageUrl(documentItem.url)
+          if (!url) return
+          const link = document.createElement('a')
+          link.className = 'document-link'
+          link.href = url
+          link.target = '_blank'
+          link.rel = 'noopener noreferrer'
+          link.append(element('span', 'document-number', String(index + 1).padStart(2, '0')), element('strong', '', documentItem.title || 'Document PDF'), element('span', 'document-format', 'PDF ↗'))
+          documents.append(link)
+        })
+      }
     }
   }
   if (page === 'gallery') {
