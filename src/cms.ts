@@ -211,6 +211,17 @@ export function normalizeContent(value: unknown): SiteContent {
       }
     }
   }
+  const projectIds = new Set(defaults.projects.map((item) => item.id))
+  const galleryIds = new Set(defaults.gallery.map((item) => item.id))
+  const projectPhotoIds = new Set(defaults.projects.flatMap((item) => item.photos.map((photo) => photo.id)))
+  const projectDocumentIds = new Set(defaults.projects.flatMap((item) => item.documents.map((documentItem) => documentItem.id)))
+  for (const locale of translationLocales) {
+    const copy = defaults.translations[locale]
+    for (const id of Object.keys(copy.projects)) if (!projectIds.has(id)) delete copy.projects[id]
+    for (const id of Object.keys(copy.gallery)) if (!galleryIds.has(id)) delete copy.gallery[id]
+    for (const id of Object.keys(copy.projectPhotos)) if (!projectPhotoIds.has(id)) delete copy.projectPhotos[id]
+    for (const id of Object.keys(copy.projectDocuments)) if (!projectDocumentIds.has(id)) delete copy.projectDocuments[id]
+  }
   return defaults
 }
 
