@@ -265,7 +265,12 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
   }
 
   function buninProject(): Project {
-    return draft.projects.find((item) => item.detailUrl.includes('maison-ivan-bounine')) ?? draft.projects[0]
+    let project = draft.projects.find((item) => item.detailUrl.includes('maison-ivan-bounine'))
+    if (!project) {
+      project = { id: crypto.randomUUID(), category: '', title: draft.text['bunin.title'] ?? '', description: '', imageUrl: '', imageAlt: '', detailUrl: '/projets/maison-ivan-bounine/', photos: [], documents: [] }
+      draft.projects.unshift(project)
+    }
+    return project
   }
 
   function createBuninAssetsPanel(): HTMLElement {
@@ -275,8 +280,40 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     panel.append(createHeading('Фотографии проекта'))
     const help = document.createElement('p')
     help.className = 'admin-help'
-    help.textContent = 'Главная фотография карточки загружается в разделе «Проекты». Здесь можно собрать отдельную фотогалерею страницы без повторов.'
+    help.textContent = 'Все изображения этой страницы добавляются здесь. Главное фото используется и на карточке проекта; ниже можно собрать отдельную фотогалерею без повторов.'
     panel.append(help)
+    const heroCard = document.createElement('article')
+    heroCard.className = 'admin-card'
+    heroCard.append(createHeading('Главная фотография проекта'))
+    heroCard.append(createBoundField('Описание главной фотографии для доступности', projectText(project, 'imageAlt'), (value) => { setProjectText(project, 'imageAlt', value) }, false, project.imageAlt))
+    const heroUrl = safeImageUrl(project.imageUrl)
+    if (heroUrl) {
+      const preview = document.createElement('img')
+      preview.className = 'admin-image-preview'
+      preview.src = heroUrl
+      preview.alt = projectText(project, 'imageAlt') || project.imageAlt || 'Главная фотография проекта'
+      heroCard.append(preview)
+    }
+    const heroFile = document.createElement('input')
+    heroFile.type = 'file'
+    heroFile.accept = 'image/jpeg,image/png,image/webp,image/avif'
+    heroFile.setAttribute('aria-label', 'Загрузить главную фотографию проекта')
+    heroFile.addEventListener('change', async () => {
+      const selected = heroFile.files?.[0]
+      if (!selected) return
+      const imageUrl = await uploadImage(selected)
+      if (imageUrl) { project.imageUrl = imageUrl; renderSection(); setStatus('Главная фотография загружена. Сохраните страницу.') }
+    })
+    heroCard.append(heroFile)
+    if (heroUrl) {
+      const removeHero = document.createElement('button')
+      removeHero.type = 'button'
+      removeHero.className = 'admin-secondary'
+      removeHero.textContent = 'Убрать главную фотографию'
+      removeHero.addEventListener('click', () => { project.imageUrl = ''; renderSection(); setStatus('Есть несохранённые изменения') })
+      heroCard.append(removeHero)
+    }
+    panel.append(heroCard)
     project.photos.forEach((photo, index) => {
       const card = document.createElement('article')
       card.className = 'admin-card'

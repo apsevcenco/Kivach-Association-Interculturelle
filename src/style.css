@@ -85,6 +85,7 @@ html[lang=ar] .eyebrow,html[lang=ar] .site-nav a,html[lang=ar] .site-footer,html
 .bunin-portrait img{width:100%;height:100%;object-fit:cover;padding:13px}
 .bunin-portrait-placeholder{font-family:'Cormorant Garamond',Georgia,serif;font-size:48px;font-style:italic;text-align:center;line-height:1}
 .bunin-intro-copy{font-size:22px;line-height:1.5}
+.bunin-portrait[hidden]+.bunin-intro-copy{grid-column:1/-1;max-width:820px}
 .bunin-opening{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(31px,3.4vw,48px);font-style:italic;line-height:1.08;margin:24px 0}
 .bunin-photo-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-flow:dense;gap:22px;margin:85px 0}
 .bunin-photo{margin:0;grid-column:span 4}
