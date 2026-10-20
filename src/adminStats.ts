@@ -8,11 +8,17 @@ type Visit = {
   language: string
   session_id: string | null
   referrer: string | null
+  country_code: string | null
 }
 
 const languageNames: Record<string, string> = {
   fr: 'Français', en: 'English', ru: 'Русский', de: 'Deutsch',
   it: 'Italiano', ar: 'العربية', es: 'Español',
+}
+
+function countryName(code: string | null): string {
+  if (!code) return 'Не определено'
+  try { return new Intl.DisplayNames('ru', { type: 'region' }).of(code) ?? code } catch { return code }
 }
 
 function escapeHtml(value: string): string {
@@ -59,10 +65,11 @@ export function renderStatsShell(container: HTMLElement): void {
       <div class="stats-columns">
         <section><h4>Популярные страницы</h4><div class="stats-table" id="stats-pages-list"></div></section>
         <section><h4>Языки</h4><div class="stats-table" id="stats-languages"></div></section>
+        <section><h4>Страны посетителей · 30 дней</h4><div class="stats-table" id="stats-countries"></div></section>
         <section><h4>Источники переходов</h4><div class="stats-table" id="stats-referrers"></div></section>
         <section><h4>Последние посещения</h4><div class="stats-table" id="stats-recent"></div></section>
       </div>
-      <p class="admin-help">Учитываются просмотры публичных страниц. «Посетители» — уникальные сессии браузера; личные данные и полные адреса переходов не сохраняются.</p>
+      <p class="admin-help">Учитываются просмотры публичных страниц. «Посетители» — уникальные сессии браузера; для новых посещений сохраняется только код страны, без IP-адреса, личных данных и полных адресов переходов.</p>
     </section>`
 }
 
@@ -73,7 +80,7 @@ export async function loadStats(client: SupabaseClient, root: HTMLElement, setSt
   setStatus('Загружаем статистику…')
   const [periodResult, totalResult] = await Promise.all([
     client.from('page_visits')
-      .select('created_at, visit_date, page_key, page_path, language, session_id, referrer')
+      .select('created_at, visit_date, page_key, page_path, language, session_id, referrer, country_code')
       .gte('created_at', since.toISOString()).order('created_at', { ascending: false }).limit(5000),
     client.from('page_visits').select('id', { count: 'exact', head: true }),
   ])
@@ -90,6 +97,7 @@ export async function loadStats(client: SupabaseClient, root: HTMLElement, setSt
   const pageCounts = new Map<string, number>()
   const languages = new Map<string, number>()
   const referrers = new Map<string, number>()
+  const countries = new Map<string, number>()
   const daily = new Map<string, number>()
   const sessions = new Set<string>()
 
@@ -105,6 +113,10 @@ export async function loadStats(client: SupabaseClient, root: HTMLElement, setSt
     languages.set(language, (languages.get(language) ?? 0) + 1)
     const source = visit.referrer || 'Прямые переходы'
     referrers.set(source, (referrers.get(source) ?? 0) + 1)
+    if (visit.country_code) {
+      const country = countryName(visit.country_code)
+      countries.set(country, (countries.get(country) ?? 0) + 1)
+    }
     const localVisitDate = dayKey(new Date(visit.created_at))
     if (daily.has(localVisitDate)) daily.set(localVisitDate, (daily.get(localVisitDate) ?? 0) + 1)
     if (visit.session_id) sessions.add(visit.session_id)
@@ -129,6 +141,7 @@ export async function loadStats(client: SupabaseClient, root: HTMLElement, setSt
   }
   const pageList = root.querySelector<HTMLElement>('#stats-pages-list'); if (pageList) pageList.innerHTML = rows(pageCounts, 'Посещений пока нет.')
   const languageList = root.querySelector<HTMLElement>('#stats-languages'); if (languageList) languageList.innerHTML = rows(languages, 'Данных пока нет.')
+  const countryList = root.querySelector<HTMLElement>('#stats-countries'); if (countryList) countryList.innerHTML = rows(countries, 'Для новых посещений страны появятся автоматически.')
   const referrerList = root.querySelector<HTMLElement>('#stats-referrers'); if (referrerList) referrerList.innerHTML = rows(referrers, 'Данных пока нет.')
   const recent = root.querySelector<HTMLElement>('#stats-recent')
   if (recent) recent.innerHTML = visits.length ? visits.slice(0, 12).map((visit) => `<div class="stats-row stats-recent"><div><span>${escapeHtml(visit.page_path || visit.page_key)}</span><small>${escapeHtml(languageNames[visit.language] ?? visit.language)}</small></div><strong>${escapeHtml(formatDate(visit.created_at))}</strong></div>`).join('') : '<p class="admin-empty">Посещений пока нет.</p>'

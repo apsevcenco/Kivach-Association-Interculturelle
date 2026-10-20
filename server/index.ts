@@ -6,10 +6,18 @@ const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
 const openaiKey = process.env.OPENAI_API_KEY
 const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+const allowedOrigins = new Set([
+  siteOrigin,
+  'https://kivachassociation.fr',
+  'https://www.kivachassociation.fr',
+  ...(process.env.PUBLIC_SITE_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean),
+])
 const languageNames: Record<string, string> = {
   fr: 'French', en: 'English', de: 'German', it: 'Italian', ar: 'Arabic', es: 'Spanish',
 }
 const requests = new Map<string, { count: number; reset: number }>()
+const countryCache = new Map<string, { code: string | null; expires: number }>()
+const publicPages = new Set(['home', 'about', 'president', 'projects', 'bunin', 'gallery', 'contact', 'cookies', 'privacy', 'legal'])
 
 function send(response: ServerResponse, status: number, body: Record<string, unknown>): void {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
@@ -47,6 +55,59 @@ function isTranslationKey(key: string): boolean {
   return parts.length === 3
     && /^[a-zA-Z0-9_-]+$/.test(parts[1])
     && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(parts[2])
+}
+
+type VisitPayload = { page_key: string; page_path: string; language: string; session_id: string | null; referrer: string | null }
+
+function validVisit(value: unknown): value is VisitPayload {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const item = value as Record<string, unknown>
+  return typeof item.page_key === 'string' && publicPages.has(item.page_key)
+    && typeof item.page_path === 'string' && item.page_path.length > 0 && item.page_path.length <= 300
+    && typeof item.language === 'string' && Object.hasOwn(languageNames, item.language)
+    && (item.session_id === null || typeof item.session_id === 'string' && item.session_id.length <= 120)
+    && (item.referrer === null || typeof item.referrer === 'string' && item.referrer.length <= 160)
+}
+
+function requestIp(request: IncomingMessage): string {
+  const forwarded = request.headers['x-forwarded-for']
+  const value = Array.isArray(forwarded) ? forwarded[0] : forwarded
+  return value?.split(',')[0]?.trim() ?? ''
+}
+
+function headerCountry(request: IncomingMessage): string | null {
+  for (const header of ['cf-ipcountry', 'x-vercel-ip-country', 'x-country-code']) {
+    const value = request.headers[header]
+    const code = (Array.isArray(value) ? value[0] : value)?.toUpperCase()
+    if (code && /^[A-Z]{2}$/.test(code)) return code
+  }
+  return null
+}
+
+async function countryForRequest(request: IncomingMessage): Promise<string | null> {
+  const fromHeader = headerCountry(request)
+  if (fromHeader) return fromHeader
+  const ip = requestIp(request)
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('10.') || ip.startsWith('192.168.')) return null
+  const cached = countryCache.get(ip)
+  const now = Date.now()
+  if (cached && cached.expires > now) return cached.code
+  let code: string | null = null
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, { signal: AbortSignal.timeout(1800) })
+    const body = await response.json() as { success?: boolean; country_code?: unknown }
+    if (body.success !== false && typeof body.country_code === 'string' && /^[A-Za-z]{2}$/.test(body.country_code)) code = body.country_code.toUpperCase()
+  } catch { /* Statistics collection must never slow down a page view. */ }
+  countryCache.set(ip, { code, expires: now + 86400000 })
+  return code
+}
+
+async function recordVisit(request: IncomingMessage, payload: VisitPayload): Promise<void> {
+  if (!supabaseUrl || !supabaseKey) return
+  const client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  const country_code = await countryForRequest(request)
+  const { error } = await client.from('page_visits').insert({ ...payload, country_code })
+  if (error) throw new Error(error.message)
 }
 
 async function translate(target: string, items: Record<string, string>): Promise<Record<string, string>> {
@@ -98,14 +159,26 @@ async function translate(target: string, items: Record<string, string>): Promise
 
 const server = createServer(async (request, response) => {
   const origin = request.headers.origin
-  if (origin && origin !== siteOrigin) { send(response, 403, { error: 'Origin not allowed' }); return }
-  if (origin) response.setHeader('Access-Control-Allow-Origin', siteOrigin)
+  if (origin && !allowedOrigins.has(origin)) { send(response, 403, { error: 'Origin not allowed' }); return }
+  if (origin) response.setHeader('Access-Control-Allow-Origin', origin)
   response.setHeader('Vary', 'Origin')
   response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
   response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
   if (request.method === 'GET' && request.url === '/health') {
     send(response, 200, { ok: true, configured: Boolean(supabaseUrl && supabaseKey && openaiKey) })
+    return
+  }
+  if (request.method === 'POST' && request.url === '/track') {
+    try {
+      const payload = await readJson(request)
+      if (!validVisit(payload)) { send(response, 400, { error: 'Invalid visit' }); return }
+      await recordVisit(request, payload)
+      send(response, 201, { ok: true })
+    } catch (error) {
+      console.error('Visit tracking failed:', error)
+      send(response, 202, { ok: false })
+    }
     return
   }
   if (request.method !== 'POST' || request.url !== '/translate') { send(response, 404, { error: 'Not found' }); return }

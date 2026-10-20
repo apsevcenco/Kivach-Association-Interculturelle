@@ -28,14 +28,22 @@ function externalReferrer(): string {
 
 export async function trackPageVisit(client: SupabaseClient, page: Page, locale: Locale): Promise<void> {
   if (['localhost', '127.0.0.1'].includes(window.location.hostname)) return
+  const visit = {
+    page_key: page,
+    page_path: window.location.pathname.slice(0, 300),
+    language: locale,
+    session_id: sessionId().slice(0, 120) || null,
+    referrer: externalReferrer() || null,
+  }
   try {
-    await client.from('page_visits').insert({
-      page_key: page,
-      page_path: window.location.pathname.slice(0, 300),
-      language: locale,
-      session_id: sessionId().slice(0, 120) || null,
-      referrer: externalReferrer() || null,
-    })
+    const endpoint = import.meta.env.VITE_TRANSLATION_API_URL?.trim().replace(/\/$/, '')
+    if (endpoint) {
+      const response = await fetch(`${endpoint}/track`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(visit), keepalive: true,
+      })
+      if (response.ok) return
+    }
+    await client.from('page_visits').insert(visit)
   } catch {
     // Audience measurement must never block the public site.
   }
