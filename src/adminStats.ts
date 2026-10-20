@@ -45,7 +45,7 @@ function dayKey(date: Date): string {
 export function renderStatsShell(container: HTMLElement): void {
   container.innerHTML = `
     <section class="admin-panel stats-panel">
-      <div class="stats-header"><div><p class="admin-section-number">Последние 30 дней</p><h3>Статистика посещений</h3></div><button type="button" class="admin-secondary" id="refresh-stats">Обновить</button></div>
+      <div class="stats-header"><div><p class="admin-section-number">Аналитика сайта</p><h3>Статистика посещений</h3></div><button type="button" class="admin-secondary" id="refresh-stats">Обновить</button></div>
       <div class="stats-grid">
         <article><span>Сегодня</span><strong id="stats-today">—</strong><small>просмотров</small></article>
         <article><span>Вчера</span><strong id="stats-yesterday">—</strong><small>просмотров</small></article>

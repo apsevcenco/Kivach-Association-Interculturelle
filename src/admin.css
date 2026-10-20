@@ -37,6 +37,7 @@ a{color:inherit}
 .admin-status{min-height:25px;font-size:15px;color:#5b513f;margin:16px 0}
 .admin-status.is-error{color:#9b2b25}
 .admin-language{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:23px 0 14px}
+.admin-language[hidden]{display:none}
 .admin-language label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
 .admin-language select{min-width:165px;padding:9px 30px 9px 12px;border:1px solid #9d8d73;border-radius:0;background:#f7f0e4;color:#29251f;font:inherit}
 .admin-language span{flex-basis:100%;font-size:15px;color:#665b4e}
