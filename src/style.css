@@ -66,6 +66,7 @@ html[lang=ar] .eyebrow,html[lang=ar] .site-nav a,html[lang=ar] .site-footer,html
 .portrait-frame img{display:block;width:100%;height:100%;object-fit:cover;padding:13px}
 .portrait-placeholder>p{text-transform:uppercase;letter-spacing:.2em;font-size:12px;margin-top:20px}
 .letter{font-size:22px;line-height:1.5;padding-top:5px}
+.letter-body{text-align:justify;text-justify:inter-word;hyphens:auto}
 .letter-salutation{font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-style:italic}
 .letter .signature{font-family:'Cormorant Garamond',Georgia,serif;font-size:43px;font-style:italic;margin:30px 0 8px}
 .letter-caption{font-size:14px;font-style:italic;border-top:1px solid #a7967d;padding-top:18px;color:#6a5c4d}
