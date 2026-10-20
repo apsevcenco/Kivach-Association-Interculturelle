@@ -57,7 +57,17 @@ function isTranslationKey(key: string): boolean {
     && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(parts[2])
 }
 
-type VisitPayload = { page_key: string; page_path: string; language: string; session_id: string | null; referrer: string | null }
+type VisitPayload = {
+  page_key: string
+  page_path: string
+  language: string
+  session_id: string | null
+  visitor_id: string | null
+  referrer: string | null
+  device_type: 'mobile' | 'tablet' | 'desktop'
+  browser_name: string
+  browser_language: string | null
+}
 
 function validVisit(value: unknown): value is VisitPayload {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
@@ -66,7 +76,11 @@ function validVisit(value: unknown): value is VisitPayload {
     && typeof item.page_path === 'string' && item.page_path.length > 0 && item.page_path.length <= 300
     && typeof item.language === 'string' && Object.hasOwn(languageNames, item.language)
     && (item.session_id === null || typeof item.session_id === 'string' && item.session_id.length <= 120)
+    && (item.visitor_id === null || typeof item.visitor_id === 'string' && item.visitor_id.length <= 120)
     && (item.referrer === null || typeof item.referrer === 'string' && item.referrer.length <= 160)
+    && typeof item.device_type === 'string' && ['mobile', 'tablet', 'desktop'].includes(item.device_type)
+    && typeof item.browser_name === 'string' && item.browser_name.length > 0 && item.browser_name.length <= 80
+    && (item.browser_language === null || typeof item.browser_language === 'string' && item.browser_language.length <= 35)
 }
 
 function requestIp(request: IncomingMessage): string {

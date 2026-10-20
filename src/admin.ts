@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, type GalleryImage, type Project, type ProjectDocument, type ProjectPhoto, type Section } from './cms'
 import { supabase } from './supabase'
 import { languageNames, locales, localHref, targetLanguageNames, type Locale } from './i18n'
-import { loadStats, renderStatsShell } from './adminStats'
+import { loadStats, renderStatsShell, type StatsPeriod } from './adminStats'
 
 const app = document.querySelector<HTMLDivElement>('#admin-app')
 if (!app) throw new Error('Missing #admin-app element')
@@ -18,6 +18,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
   let draft = defaultContent()
   let activeSection: Section = 'home'
   let activeLocale: Locale = 'fr'
+  let activeStatsPeriod: StatsPeriod = '30d'
   let email = ''
   let saving = false
   let translating = false
@@ -120,9 +121,16 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     container.replaceChildren()
     if (isStats) {
       root.querySelector<HTMLElement>('#translation-hint')!.textContent = ''
-      renderStatsShell(container)
-      root.querySelector<HTMLButtonElement>('#refresh-stats')?.addEventListener('click', () => { void loadStats(client, root, setStatus) })
-      void loadStats(client, root, setStatus)
+      renderStatsShell(container, activeStatsPeriod)
+      const refreshStats = () => { void loadStats(client, root, setStatus, activeStatsPeriod) }
+      root.querySelector<HTMLButtonElement>('#refresh-stats')?.addEventListener('click', refreshStats)
+      root.querySelectorAll<HTMLButtonElement>('[data-stats-period]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeStatsPeriod = button.dataset.statsPeriod as StatsPeriod
+          refreshStats()
+        })
+      })
+      refreshStats()
       return
     }
     const textPanel = document.createElement('section')
