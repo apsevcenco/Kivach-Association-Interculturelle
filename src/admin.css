@@ -50,6 +50,8 @@ a{color:inherit}
 .admin-field{margin:0 0 22px}
 .admin-field label{margin-bottom:8px}
 .admin-field textarea{resize:vertical;min-height:90px;line-height:1.35}
+.admin-field--paragraphs textarea{min-height:240px;line-height:1.55;background:#fffaf1}
+.admin-field-help{margin:8px 0 0;font-size:14px;line-height:1.35;color:#665b4e;font-style:italic}
 .admin-image-preview{display:block;width:min(100%,420px);max-height:340px;object-fit:contain;border:1px solid #b6a68c;background:#e5d8c3;margin:12px 0 20px}
 .admin-panel input[type=file]{display:block;max-width:100%;font-size:15px;margin:15px 0}
 .admin-help{font-size:16px;font-style:italic;color:#665b4e}

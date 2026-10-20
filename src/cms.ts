@@ -5,7 +5,7 @@ import { legalDocuments, type LegalPage } from './legalTemplates'
 import { legalUiSeed } from './legalUiSeed'
 
 export type Section = Page | 'global' | 'stats'
-export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean }
+export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean; paragraphs?: boolean }
 export type ProjectPhoto = { id: string; caption: string; imageUrl: string; imageAlt: string }
 export type ProjectDocument = { id: string; title: string; url: string }
 export type Project = { id: string; category: string; title: string; description: string; imageUrl: string; imageAlt: string; detailUrl: string; photos: ProjectPhoto[]; documents: ProjectDocument[] }
@@ -70,9 +70,7 @@ export const textFields: TextField[] = [
   { page: 'about', key: 'about.title', label: 'Заголовок', selector: '.page-heading h1' },
   { page: 'about', key: 'about.lead', label: 'Подзаголовок', selector: '.page-heading .lead', multiline: true },
   { page: 'about', key: 'about.section', label: 'Название раздела', selector: '.section-mark' },
-  { page: 'about', key: 'about.p1', label: 'Основной текст · абзац 1', selector: '.prose p:nth-child(1)', multiline: true },
-  { page: 'about', key: 'about.p2', label: 'Основной текст · абзац 2', selector: '.prose p:nth-child(2)', multiline: true },
-  { page: 'about', key: 'about.p3', label: 'Основной текст · абзац 3', selector: '.prose p:nth-child(3)', multiline: true },
+  { page: 'about', key: 'about.body', label: 'Основной текст', selector: '.prose', multiline: true, paragraphs: true },
   { page: 'about', key: 'about.principle1.title', label: 'Принцип I · заголовок', selector: '.principles > div:nth-child(1) h2' },
   { page: 'about', key: 'about.principle1.text', label: 'Принцип I · текст', selector: '.principles > div:nth-child(1) p', multiline: true },
   { page: 'about', key: 'about.principle2.title', label: 'Принцип II · заголовок', selector: '.principles > div:nth-child(2) h2' },
@@ -85,9 +83,7 @@ export const textFields: TextField[] = [
   { page: 'president', key: 'president.lead', label: 'Подзаголовок', selector: '.page-heading .lead', multiline: true },
   { page: 'president', key: 'president.portraitCaption', label: 'Подпись под портретом', selector: '.portrait-placeholder > p' },
   { page: 'president', key: 'president.salutation', label: 'Обращение', selector: '.letter-salutation' },
-  { page: 'president', key: 'president.p1', label: 'Письмо · абзац 1', selector: '.letter p:nth-child(2)', multiline: true },
-  { page: 'president', key: 'president.p2', label: 'Письмо · абзац 2', selector: '.letter p:nth-child(3)', multiline: true },
-  { page: 'president', key: 'president.p3', label: 'Письмо · абзац 3', selector: '.letter p:nth-child(4)', multiline: true },
+  { page: 'president', key: 'president.body', label: 'Письмо · основной текст', selector: '.letter-body', multiline: true, paragraphs: true },
   { page: 'president', key: 'president.signature', label: 'Подпись', selector: '.letter .signature' },
   { page: 'president', key: 'president.note', label: 'Примечание', selector: '.letter-caption', multiline: true },
   { page: 'projects', key: 'projects.eyebrow', label: 'Надзаголовок', selector: '.page-heading .eyebrow' },
@@ -178,7 +174,10 @@ export function defaultContent(): SiteContent {
     if (section.key === 'global' || section.key === 'stats') continue
     const doc = new DOMParser().parseFromString(pages[section.key], 'text/html')
     for (const field of textFields.filter((item) => item.page === section.key)) {
-      text[field.key] = doc.querySelector(field.selector)?.textContent?.trim() ?? ''
+      const node = doc.querySelector(field.selector)
+      text[field.key] = field.paragraphs
+        ? Array.from(node?.querySelectorAll(':scope > p') ?? []).map((paragraph) => paragraph.textContent?.trim() ?? '').filter(Boolean).join('\n\n')
+        : node?.textContent?.trim() ?? ''
     }
   }
   const projectDoc = new DOMParser().parseFromString(pages.projects, 'text/html')
@@ -210,6 +209,7 @@ export function normalizeContent(value: unknown): SiteContent {
     for (const key of Object.keys(defaults.text)) {
       if (typeof raw.text[key] === 'string') defaults.text[key] = raw.text[key]
     }
+    migrateParagraphFields(defaults.text, raw.text)
   }
   if (raw.images && typeof raw.images === 'object') {
     for (const key of Object.keys(defaults.images)) {
@@ -224,6 +224,7 @@ export function normalizeContent(value: unknown): SiteContent {
       if (!copy || typeof copy !== 'object') continue
       if (copy.text && typeof copy.text === 'object') {
         for (const [key, value] of Object.entries(copy.text)) if (typeof value === 'string') defaults.translations[locale].text[key] = value
+        migrateParagraphFields(defaults.translations[locale].text, copy.text)
       }
       if (copy.projects && typeof copy.projects === 'object') {
         for (const [id, item] of Object.entries(copy.projects)) if (isProjectCopy(item)) defaults.translations[locale].projects[id] = item
@@ -270,6 +271,22 @@ function nonEmpty<T extends object>(values: T): T {
   return Object.fromEntries(Object.entries(values).filter(([, value]) => typeof value === 'string' && value.trim())) as T
 }
 
+function migrateParagraphFields(target: Record<string, string>, source: Record<string, unknown>): void {
+  const legacyGroups = [
+    { key: 'about.body', legacy: ['about.p1', 'about.p2', 'about.p3'] },
+    { key: 'president.body', legacy: ['president.p1', 'president.p2', 'president.p3'] },
+  ]
+  for (const group of legacyGroups) {
+    const current = source[group.key]
+    if (typeof current === 'string' && current.trim()) continue
+    const paragraphs = group.legacy
+      .map((key) => source[key])
+      .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+      .map((value) => value.trim())
+    if (paragraphs.length) target[group.key] = paragraphs.join('\n\n')
+  }
+}
+
 function normalizeProject(value: unknown): Project | null {
   if (!value || typeof value !== 'object') return null
   const item = value as Record<string, unknown>
@@ -314,7 +331,18 @@ export function applyContent(root: HTMLElement, page: Page, content: SiteContent
   for (const field of textFields) {
     if (field.page !== page && field.page !== 'global') continue
     const node = root.querySelector<HTMLElement>(field.selector)
-    if (node && typeof content.text[field.key] === 'string') node.textContent = content.text[field.key]
+    if (!node || typeof content.text[field.key] !== 'string') continue
+    if (field.paragraphs) {
+      const paragraphs = content.text[field.key].split(/\n\s*\n/).map((value) => value.trim()).filter(Boolean)
+      node.replaceChildren(...paragraphs.map((text, index) => {
+        const paragraph = document.createElement('p')
+        if (index === 0) paragraph.className = 'dropcap'
+        paragraph.textContent = text
+        return paragraph
+      }))
+    } else {
+      node.textContent = content.text[field.key]
+    }
   }
   const logo = safeImageUrl(content.images.logo ?? '')
   if (logo) root.querySelectorAll<HTMLImageElement>('[data-logo]').forEach((image) => { image.src = logo })

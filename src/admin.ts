@@ -137,7 +137,10 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       label.textContent = field.label
       const input = field.multiline ? document.createElement('textarea') : document.createElement('input')
       input.id = id
-      if (input instanceof HTMLTextAreaElement) input.rows = ['cookies', 'privacy', 'legal'].includes(activeSection) ? 7 : 4
+      if (input instanceof HTMLTextAreaElement) {
+        input.rows = field.paragraphs || ['cookies', 'privacy', 'legal'].includes(activeSection) ? 10 : 4
+        input.addEventListener('input', () => resizeTextarea(input))
+      }
       input.value = activeLocale === 'fr' ? (draft.text[field.key] ?? '') : (draft.translations[activeLocale].text[field.key] ?? '')
       input.placeholder = activeLocale === 'fr' ? '' : draft.text[field.key] ?? ''
       input.addEventListener('input', () => {
@@ -146,7 +149,15 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
         setStatus('Есть несохранённые изменения')
       })
       wrapper.append(label, input)
+      if (field.paragraphs) {
+        wrapper.classList.add('admin-field--paragraphs')
+        const help = document.createElement('p')
+        help.className = 'admin-field-help'
+        help.textContent = 'Разделяйте абзацы пустой строкой. На сайте каждый фрагмент станет отдельным абзацем.'
+        wrapper.append(help)
+      }
       textPanel.append(wrapper)
+      if (input instanceof HTMLTextAreaElement) requestAnimationFrame(() => resizeTextarea(input))
     }
     container.append(textPanel)
     if (activeSection === 'global') container.append(createImagePanel('Логотип сайта', 'logo', 'Загрузить новый логотип'))
@@ -160,6 +171,11 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const heading = document.createElement('h3')
     heading.textContent = text
     return heading
+  }
+
+  function resizeTextarea(input: HTMLTextAreaElement): void {
+    input.style.height = 'auto'
+    input.style.height = `${Math.min(Math.max(input.scrollHeight, 90), 520)}px`
   }
 
   function createImagePanel(title: string, key: 'logo' | 'portrait', uploadLabel: string): HTMLElement {
