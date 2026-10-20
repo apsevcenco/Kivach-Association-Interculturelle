@@ -31,12 +31,22 @@ function validatedItems(value: unknown): Record<string, string> | null {
   if (!entries.length || entries.length > 25) return null
   let total = 0
   for (const [key, text] of entries) {
-    if (!/^(text\|[a-zA-Z0-9.]+|(?:project|gallery|projectPhoto|projectDocument)\|[a-z0-9-]+\|[a-zA-Z]+)$/.test(key)) return null
+    if (!isTranslationKey(key)) return null
     if (typeof text !== 'string' || !text.trim() || text.length > 2500) return null
     total += text.length
   }
   if (total > 18000) return null
   return Object.fromEntries(entries) as Record<string, string>
+}
+
+function isTranslationKey(key: string): boolean {
+  if (key.length > 180 || /[\u0000-\u001f]/.test(key)) return false
+  const parts = key.split('|')
+  if (parts[0] === 'text') return parts.length === 2 && /^[a-zA-Z][a-zA-Z0-9._-]*$/.test(parts[1])
+  if (!['project', 'gallery', 'projectPhoto', 'projectDocument'].includes(parts[0])) return false
+  return parts.length === 3
+    && /^[a-zA-Z0-9_-]+$/.test(parts[1])
+    && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(parts[2])
 }
 
 async function translate(target: string, items: Record<string, string>): Promise<Record<string, string>> {
