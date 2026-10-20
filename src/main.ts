@@ -4,6 +4,7 @@ import { applyContent, defaultContent, localizedContent, normalizeContent } from
 import { supabase } from './supabase'
 import { interfaceCopy, languageNames, locales, localHref, preferredLocale } from './i18n'
 import { trackPageVisit } from './analytics'
+import { setupContactForm } from './contactForm'
 
 import { pages, type Page } from './templates'
 
@@ -105,6 +106,8 @@ if (supabase) {
     if (data?.content) showContent(normalizeContent(data.content))
   })
 }
+
+if (currentPage === 'contact') setupContactForm(supabase, locale)
 
 const menuToggle = document.querySelector<HTMLButtonElement>('.menu-toggle')
 const menuBackdrop = document.querySelector<HTMLButtonElement>('.menu-backdrop')

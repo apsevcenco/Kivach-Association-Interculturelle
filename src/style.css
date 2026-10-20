@@ -132,9 +132,13 @@ html[lang=ar] .eyebrow,html[lang=ar] .site-nav a,html[lang=ar] .site-footer,html
 .contact-form-wrap>p{margin:0 0 25px}
 .contact-form-wrap label{display:block;text-transform:uppercase;letter-spacing:.18em;font-size:12px;margin:20px 0 8px}
 .contact-form-wrap input,.contact-form-wrap textarea{width:100%;border:1px solid #9d8d73;background:#f3ebdc;padding:12px;border-radius:0}
+.contact-form-wrap input:focus,.contact-form-wrap textarea:focus{outline:2px solid #735d42;outline-offset:2px}
 .contact-form-wrap button{margin-top:22px;padding:12px 22px;background:#594b3a;border:0;color:#eee6d6;text-transform:uppercase;letter-spacing:.15em;font-size:12px}
 .contact-form-wrap button:disabled{opacity:.55;cursor:not-allowed}
 .form-note{font-size:14px;font-style:italic;color:#6a5c4d}
+.form-status{min-height:1.5em;margin-top:15px;font-size:16px;font-style:normal;color:#315436}
+.form-status.is-error{color:#8a2f27}
+.contact-hp{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .site-footer{border-top:1px solid #9d8d73;padding:22px clamp(22px,4.5vw,80px);display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.18em;font-size:11px}
 .site-footer img{width:75px;height:20px;object-fit:contain}
 .footer-links{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 19px;text-transform:none;letter-spacing:.06em;font-size:13px}

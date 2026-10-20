@@ -4,6 +4,7 @@ import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, t
 import { supabase } from './supabase'
 import { languageNames, locales, localHref, targetLanguageNames, type Locale } from './i18n'
 import { loadStats, renderStatsShell, type StatsPeriod } from './adminStats'
+import { mountMessages } from './adminMessages'
 
 const app = document.querySelector<HTMLDivElement>('#admin-app')
 if (!app) throw new Error('Missing #admin-app element')
@@ -106,11 +107,13 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const preview = root.querySelector<HTMLAnchorElement>('#page-preview')!
     const paths: Partial<Record<Section, string>> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', bunin: '/projets/maison-ivan-bounine/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
     const isStats = activeSection === 'stats'
-    preview.hidden = isStats
-    root.querySelector<HTMLButtonElement>('#save-content')!.hidden = isStats
-    root.querySelector<HTMLElement>('.admin-language')!.hidden = isStats
-    if (!isStats) preview.href = localHref(paths[activeSection] ?? '/', activeLocale)
-    root.querySelector<HTMLElement>('#translation-actions')!.hidden = isStats || activeLocale !== 'ru'
+    const isMessages = activeSection === 'messages'
+    const isUtility = isStats || isMessages
+    preview.hidden = isUtility
+    root.querySelector<HTMLButtonElement>('#save-content')!.hidden = isUtility
+    root.querySelector<HTMLElement>('.admin-language')!.hidden = isUtility
+    if (!isUtility) preview.href = localHref(paths[activeSection] ?? '/', activeLocale)
+    root.querySelector<HTMLElement>('#translation-actions')!.hidden = isUtility || activeLocale !== 'ru'
     root.querySelector<HTMLElement>('#translation-hint')!.textContent = activeLocale === 'ru'
       ? 'Русский текст служит оригиналом для автоматического перевода. После перевода проверьте языки и сохраните.'
       : activeLocale === 'fr' ? 'Исходная французская версия сайта.' : 'Перевод можно исправить вручную после генерации.'
@@ -119,6 +122,11 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     })
     const container = root.querySelector<HTMLElement>('#section-fields')!
     container.replaceChildren()
+    if (isMessages) {
+      root.querySelector<HTMLElement>('#translation-hint')!.textContent = ''
+      mountMessages(client, container, setStatus)
+      return
+    }
     if (isStats) {
       root.querySelector<HTMLElement>('#translation-hint')!.textContent = ''
       renderStatsShell(container, activeStatsPeriod)
