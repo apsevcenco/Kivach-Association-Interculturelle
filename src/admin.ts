@@ -153,7 +153,7 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
         wrapper.classList.add('admin-field--paragraphs')
         const help = document.createElement('p')
         help.className = 'admin-field-help'
-        help.textContent = 'Разделяйте абзацы пустой строкой. На сайте каждый фрагмент станет отдельным абзацем.'
+        help.textContent = 'Нажимайте Enter между абзацами. На сайте каждый фрагмент станет отдельным абзацем с пустой строкой между ними.'
         wrapper.append(help)
       }
       textPanel.append(wrapper)

@@ -330,7 +330,7 @@ export function applyContent(root: HTMLElement, page: Page, content: SiteContent
     const node = root.querySelector<HTMLElement>(field.selector)
     if (!node || typeof content.text[field.key] !== 'string') continue
     if (field.paragraphs) {
-      const paragraphs = content.text[field.key].split(/\n\s*\n/).map((value) => value.trim()).filter(Boolean)
+      const paragraphs = content.text[field.key].split(/\r?\n+/).map((value) => value.trim()).filter(Boolean)
       node.replaceChildren(...paragraphs.map((text, index) => {
         const paragraph = document.createElement('p')
         if (index === 0) paragraph.className = 'dropcap'

@@ -52,7 +52,8 @@ html[lang=ar] .eyebrow,html[lang=ar] .site-nav a,html[lang=ar] .site-footer,html
 .section-mark{font-size:12px;letter-spacing:.23em;text-transform:uppercase;font-weight:600}
 .prose{font-size:22px;line-height:1.44;max-width:730px}
 .prose,.letter-body,.principles p,.project-description,.bunin-documents [data-field$=".documentsLead"],.policy-section p,.contact-details p:last-child,.contact-form-wrap>p{text-align:justify;text-justify:inter-word;hyphens:auto}
-.prose p,.letter p{margin:0 0 24px}
+.prose p,.letter-body p{margin:0 0 1.45em}
+.prose p:last-child,.letter-body p:last-child{margin-bottom:0}
 .dropcap:first-letter{float:left;font-family:'Cormorant Garamond',Georgia,serif;font-size:5.2em;line-height:.68;padding:12px 10px 0 0}
 .principles{display:grid;grid-template-columns:repeat(3,1fr);gap:44px;margin-top:90px}
 .principles>div{border-top:2px double #6c5840;padding-top:20px}
