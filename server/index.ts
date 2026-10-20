@@ -32,7 +32,7 @@ function validatedItems(value: unknown): Record<string, string> | null {
   let total = 0
   for (const [key, text] of entries) {
     if (!isTranslationKey(key)) return null
-    if (typeof text !== 'string' || !text.trim() || text.length > 2500) return null
+    if (typeof text !== 'string' || !text.trim() || text.length > 8000) return null
     total += text.length
   }
   if (total > 18000) return null

@@ -554,15 +554,15 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     }
     const entries = Object.entries(items)
     if (!entries.length) { setStatus('Сначала заполните русский текст этого раздела.', true); return }
+    const chunks = createTranslationChunks(entries)
     translating = true
     root.querySelectorAll<HTMLButtonElement>('#translation-actions button').forEach((button) => { button.disabled = true })
     const targets: Array<Exclude<Locale, 'ru'>> = ['fr', 'en', 'de', 'it', 'ar', 'es']
     let completed = 0
     try {
       for (const target of targets) {
-        for (let index = 0; index < entries.length; index += 25) {
-          const chunk = Object.fromEntries(entries.slice(index, index + 25))
-          setStatus(`Переводим на ${languageNames[target]}… ${completed + 1} / ${targets.length * Math.ceil(entries.length / 25)}`)
+        for (const chunk of chunks) {
+          setStatus(`Переводим на ${languageNames[target]}… ${completed + 1} / ${targets.length * chunks.length}`)
           const response = await fetch(`${endpoint}/translate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -622,6 +622,26 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
       translating = false
       root.querySelectorAll<HTMLButtonElement>('#translation-actions button').forEach((button) => { button.disabled = false })
     }
+  }
+
+  function createTranslationChunks(entries: Array<[string, string]>): Array<Record<string, string>> {
+    const maxItems = 25
+    const maxCharacters = 14000
+    const chunks: Array<Record<string, string>> = []
+    let chunk: Record<string, string> = {}
+    let length = 0
+    for (const [key, value] of entries) {
+      const itemLength = key.length + value.length
+      if (Object.keys(chunk).length && (Object.keys(chunk).length >= maxItems || length + itemLength > maxCharacters)) {
+        chunks.push(chunk)
+        chunk = {}
+        length = 0
+      }
+      chunk[key] = value
+      length += itemLength
+    }
+    if (Object.keys(chunk).length) chunks.push(chunk)
+    return chunks
   }
 
   async function saveContent(): Promise<void> {
