@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { defaultContent, normalizeContent, safeImageUrl, sections, textFields, type GalleryImage, type Project, type ProjectDocument, type ProjectPhoto, type Section } from './cms'
 import { supabase } from './supabase'
 import { languageNames, locales, localHref, targetLanguageNames, type Locale } from './i18n'
+import { loadStats, renderStatsShell } from './adminStats'
 
 const app = document.querySelector<HTMLDivElement>('#admin-app')
 if (!app) throw new Error('Missing #admin-app element')
@@ -102,9 +103,13 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     const section = sections.find((item) => item.key === activeSection)!
     root.querySelector<HTMLElement>('#section-title')!.textContent = section.label
     const preview = root.querySelector<HTMLAnchorElement>('#page-preview')!
-    const paths: Record<Section, string> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', bunin: '/projets/maison-ivan-bounine/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
-    preview.href = localHref(paths[activeSection], activeLocale)
-    root.querySelector<HTMLElement>('#translation-actions')!.hidden = activeLocale !== 'ru'
+    const paths: Partial<Record<Section, string>> = { global: '/', home: '/', about: '/association/', president: '/presidente/', projects: '/projets/', bunin: '/projets/maison-ivan-bounine/', gallery: '/galerie/', contact: '/contact/', cookies: '/cookies/', privacy: '/confidentialite/', legal: '/mentions-legales/' }
+    const isStats = activeSection === 'stats'
+    preview.hidden = isStats
+    root.querySelector<HTMLButtonElement>('#save-content')!.hidden = isStats
+    root.querySelector<HTMLElement>('.admin-language')!.hidden = isStats
+    if (!isStats) preview.href = localHref(paths[activeSection] ?? '/', activeLocale)
+    root.querySelector<HTMLElement>('#translation-actions')!.hidden = isStats || activeLocale !== 'ru'
     root.querySelector<HTMLElement>('#translation-hint')!.textContent = activeLocale === 'ru'
       ? 'Русский текст служит оригиналом для автоматического перевода. После перевода проверьте языки и сохраните.'
       : activeLocale === 'fr' ? 'Исходная французская версия сайта.' : 'Перевод можно исправить вручную после генерации.'
@@ -113,6 +118,13 @@ async function start(client: SupabaseClient, root: HTMLElement): Promise<void> {
     })
     const container = root.querySelector<HTMLElement>('#section-fields')!
     container.replaceChildren()
+    if (isStats) {
+      root.querySelector<HTMLElement>('#translation-hint')!.textContent = ''
+      renderStatsShell(container)
+      root.querySelector<HTMLButtonElement>('#refresh-stats')?.addEventListener('click', () => { void loadStats(client, root, setStatus) })
+      void loadStats(client, root, setStatus)
+      return
+    }
     const textPanel = document.createElement('section')
     textPanel.className = 'admin-panel'
     textPanel.append(createHeading('Тексты и заголовки'))

@@ -4,7 +4,7 @@ import { russianSeed } from './russianSeed'
 import { legalDocuments, type LegalPage } from './legalTemplates'
 import { legalUiSeed } from './legalUiSeed'
 
-export type Section = Page | 'global'
+export type Section = Page | 'global' | 'stats'
 export type TextField = { key: string; page: Section; label: string; selector: string; multiline?: boolean }
 export type ProjectPhoto = { id: string; caption: string; imageUrl: string; imageAlt: string }
 export type ProjectDocument = { id: string; title: string; url: string }
@@ -40,6 +40,7 @@ export const sections: { key: Section; label: string }[] = [
   { key: 'cookies', label: 'Политика cookies' },
   { key: 'privacy', label: 'Конфиденциальность' },
   { key: 'legal', label: 'Mentions légales' },
+  { key: 'stats', label: 'Статистика' },
 ]
 
 export const textFields: TextField[] = [
@@ -174,7 +175,7 @@ export function defaultContent(): SiteContent {
   if (cachedDefaults) return structuredClone(cachedDefaults)
   const text = { ...globalDefaults }
   for (const section of sections) {
-    if (section.key === 'global') continue
+    if (section.key === 'global' || section.key === 'stats') continue
     const doc = new DOMParser().parseFromString(pages[section.key], 'text/html')
     for (const field of textFields.filter((item) => item.page === section.key)) {
       text[field.key] = doc.querySelector(field.selector)?.textContent?.trim() ?? ''

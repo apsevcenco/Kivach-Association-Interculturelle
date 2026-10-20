@@ -3,6 +3,7 @@ import { logoDataUrl } from './logo'
 import { applyContent, defaultContent, localizedContent, normalizeContent } from './cms'
 import { supabase } from './supabase'
 import { interfaceCopy, languageNames, locales, localHref, preferredLocale } from './i18n'
+import { trackPageVisit } from './analytics'
 
 import { pages, type Page } from './templates'
 
@@ -95,6 +96,7 @@ app.querySelector<HTMLSelectElement>('#site-language')?.addEventListener('change
 })
 
 if (supabase) {
+  void trackPageVisit(supabase, currentPage, locale)
   void supabase.from('site_content').select('content').eq('id', 1).maybeSingle().then(({ data, error }) => {
     if (error) {
       console.warn('Le contenu éditorial est indisponible :', error.message)
