@@ -59,7 +59,7 @@ html[lang=ar] .eyebrow,html[lang=ar] .site-nav a,html[lang=ar] .site-footer,html
 .principles h2,.project-card h2,.contact-form-wrap h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;line-height:1;margin:16px 0;font-weight:500}
 .principles p,.project-card p,.contact-details p{line-height:1.4}
 .source-note{margin:70px 0 0;padding-top:20px;border-top:1px solid #a7967d;font-size:14px;font-style:italic;color:#6a5c4d}
-.president-layout{display:grid;grid-template-columns:42% 1fr;gap:9%;align-items:start}
+.president-layout{display:grid;grid-template-columns:21% 1fr;gap:9%;align-items:start}
 .portrait-placeholder{margin:0}
 .portrait-frame{aspect-ratio:4/5;border:1px solid #786b59;outline:1px solid #786b59;outline-offset:-13px;background:linear-gradient(145deg,#d0be9e,#e7d8bf 48%,#cbb895);display:grid;place-items:center}
 .portrait-frame span{text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-style:italic;line-height:1.1;color:#6c5c47}
